@@ -29,12 +29,12 @@ __all__: Final[list[str]] = [
 
 PROJECT_ROOT: Final[Path] = here()
 
-DATA_DIR:      Final[Path] = PROJECT_ROOT / "data"
-RAW_DIR:       Final[Path] = DATA_DIR / "raw"
-INTERIM_DIR:   Final[Path] = DATA_DIR / "interim"
+DATA_DIR: Final[Path] = PROJECT_ROOT / "data"
+RAW_DIR: Final[Path] = DATA_DIR / "raw"
+INTERIM_DIR: Final[Path] = DATA_DIR / "interim"
 PROCESSED_DIR: Final[Path] = DATA_DIR / "processed"
-ENRICHED_DIR:  Final[Path] = DATA_DIR / "enriched"
-EXTERNAL_DIR:  Final[Path] = DATA_DIR / "external"
+ENRICHED_DIR: Final[Path] = DATA_DIR / "enriched"
+EXTERNAL_DIR: Final[Path] = DATA_DIR / "external"
 
-CONFIGS_DIR:   Final[Path] = PROJECT_ROOT / "configs"
-DOCS_DIR:      Final[Path] = PROJECT_ROOT / "docs"
+CONFIGS_DIR: Final[Path] = PROJECT_ROOT / "configs"
+DOCS_DIR: Final[Path] = PROJECT_ROOT / "docs"
