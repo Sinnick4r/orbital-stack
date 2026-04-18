@@ -588,7 +588,7 @@ def _cast_columns(df: pl.DataFrame) -> pl.DataFrame:
     string_cols.append(_REG_DOCS_COL)
     date_cols = [c for c, dt in _SCHEMA.items() if dt is pl.Date]
 
-    exprs: list[pl.Expr] = [pl.col(c).cast(pl.String) for c in string_cols]
+    exprs: list[pl.Expr] = [pl.col(c).cast(pl.String).str.strip_chars() for c in string_cols]
     exprs.extend(_parse_date_column(c) for c in date_cols)
     exprs.append(_parse_un_registered("UN Registered"))
 

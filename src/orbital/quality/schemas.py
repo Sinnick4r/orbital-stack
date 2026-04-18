@@ -40,10 +40,26 @@ __all__ = [
 # files record this so mismatched schema versions are detected at load time.
 RAW_SCHEMA_VERSION: Final[str] = "1.0.0"
 
-# COSPAR International Designator: YYYY-NNN + up to 3 piece letters.
-# The '*' appears in a handful of historical UNOOSA records for planned
-# launches that never reached orbit; preserved to match source fidelity.
-_COSPAR_PATTERN: Final[str] = r"^\d{4}-\d{3}[A-Z*]{0,3}$"
+# COSPAR International Designator structural check.
+#
+# UNOOSA mixes two official numbering systems plus real-world quirks:
+#   - Modern (1963-present): 'YYYY-NNN[A-Z*-]' e.g. '2024-001A', '2013-066-Z'.
+#   - Historical (1957-1962): 'YYYY-<Greek letter>[ Greek letter][ piece#]'
+#     e.g. '1962-BETA OMEGA 1', '1957-ALPHA'.
+#   - Typos tolerated upstream: 5-digit years like '22022-002AM'.
+#   - Placeholders: 'XXXX' when UNOOSA has year but no launch number.
+#
+# Trying to encode this fully in one regex is a losing game (the historical
+# system alone has ~25 Greek-letter variants with positional rules). The
+# schema's job here is only to reject genuinely empty or garbage values —
+# year plausibility, modern-vs-historical coherence, and other semantic
+# checks belong in `orbital.quality.expectations`.
+#
+# Pattern rationale:
+#   - `\d{4,5}-` : must start with a year-like prefix and a separator.
+#   - `[A-Z0-9*\- ]+` : after that, only uppercase letters, digits, hyphens,
+#     asterisks, or spaces. Rejects lowercase noise like 'null' or 'error'.
+_COSPAR_PATTERN: Final[str] = r"^\d{4,5}-[A-Z0-9*\- ]+$"
 
 # Earliest plausible date: Sputnik-1, 4 October 1957. Any date earlier than
 # this is a parse error, not a real launch or decay event.
@@ -101,7 +117,7 @@ class UnoosaRawSchema(pa.DataFrameModel):
     international_designator: str = pa.Field(
         alias="International Designator",
         nullable=False,
-        checks=pa.Check.str_matches(_COSPAR_PATTERN),
+        str_matches=_COSPAR_PATTERN,
         description="COSPAR identifier, e.g. '2024-001A'. Primary key.",
     )
     national_designator: str = pa.Field(
