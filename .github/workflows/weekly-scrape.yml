@@ -1,0 +1,103 @@
+name: weekly-scrape
+
+on:
+  schedule:
+    # Sundays at 03:00 UTC.
+    - cron: "0 3 * * 0"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: weekly-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    name: weekly UNOOSA ingest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --all-extras
+
+      - name: Configure DVC remote credentials
+        env:
+          DVC_B2_KEY_ID:    ${{ secrets.DVC_B2_KEY_ID }}
+          DVC_B2_APP_KEY:   ${{ secrets.DVC_B2_APP_KEY }}
+        run: |
+          uv run dvc remote modify --local b2 access_key_id "$DVC_B2_KEY_ID"
+          uv run dvc remote modify --local b2 secret_access_key "$DVC_B2_APP_KEY"
+
+      - name: Pull current data state from DVC remote
+        run: uv run dvc pull
+
+      - name: Run weekly ingest flow
+        env:
+          ORBITAL_LOG_FORMAT: json
+          SPACETRACK_USER:     ${{ secrets.SPACETRACK_USER }}
+          SPACETRACK_PASSWORD: ${{ secrets.SPACETRACK_PASSWORD }}
+        run: uv run python -m pipelines.flows.ingest_flow
+
+      - name: Update DVC pointer for new snapshots
+        run: uv run dvc add data/raw/unoosa
+
+      - name: Push updated data to DVC remote
+        run: uv run dvc push
+
+      - name: Detect changes
+        id: detect
+        run: |
+          SNAPSHOT_DATE="$(date -u +%Y-%m-%d)"
+          echo "snapshot_date=${SNAPSHOT_DATE}" >> "$GITHUB_OUTPUT"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open snapshot pull request
+        if: steps.detect.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: data/snapshot-${{ steps.detect.outputs.snapshot_date }}
+          base: main
+          commit-message: "chore(data): snapshot ${{ steps.detect.outputs.snapshot_date }}"
+          title: "chore(data): snapshot ${{ steps.detect.outputs.snapshot_date }}"
+          body: |
+            Automated weekly UNOOSA snapshot.
+
+            - Snapshot date: `${{ steps.detect.outputs.snapshot_date }}`
+            - Changelog diff: `docs/changelog/snapshots/${{ steps.detect.outputs.snapshot_date }}.md`
+            - DVC pointer files updated below.
+
+            See ADR-003 for the DVC/Prefect separation, and `docs/PLAN.md` §1.6 for
+            the manual-review policy for the first four weeks.
+          labels: |
+            data
+            automated
+          delete-branch: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Snapshot date: ${{ steps.detect.outputs.snapshot_date }}"
+          echo "Changes:       ${{ steps.detect.outputs.has_changes }}"

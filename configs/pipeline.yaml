@@ -1,0 +1,54 @@
+# orbital-stack — pipeline configuration.
+#
+# Conventions:
+#   - Keys are English; values are domain-specific strings.
+#   - NEVER store secrets here. Credentials come from env vars only
+#     (see ADR-002 and the OWASP Secrets Management Cheat Sheet).
+#   - Any value can be overridden by an env var prefixed ORBITAL_.
+
+unoosa:
+  base_url: "https://www.unoosa.org/oosa/osoindex/search-ng.jspx"
+  batch_size: 100
+  timeout_seconds: 30
+  retries:
+    max_attempts: 5
+    initial_wait_seconds: 2
+    max_wait_seconds: 60
+    multiplier: 2.0
+  headers:
+    User-Agent: "orbital-stack/0.1 (+https://github.com/<owner>/orbital-stack)"
+    Accept: "text/html,application/xhtml+xml"
+    Accept-Language: "en-US,en;q=0.9"
+
+dvc:
+  remote_name: "b2"
+  compression: "zstd"
+  compression_level: 3
+  # Pointer files live next to the data they describe; no dvc.yaml (see ADR-003).
+
+quality:
+  # Thresholds for Phase 1 custom drift checks
+  # (src/orbital/quality/expectations.py). Fail-fast if exceeded.
+  min_rows_new: 10
+  max_rows_new: 500
+  max_un_registered_drift_pp: 2.0
+  state_of_registry_topn: 10
+  # Hard bounds on absolute registry size — sanity check against
+  # catastrophic scraper regressions.
+  min_total_rows: 20000
+  max_total_rows: 60000
+
+logging:
+  # "json" for CI/production (machine-parseable), "console" for local dev.
+  # Override via ORBITAL_LOG_FORMAT=console.
+  format: "json"
+  level: "INFO"
+  timestamp_key: "timestamp"
+  event_key: "event"
+  # Fields that MUST be scrubbed before emission (OWASP Logging Cheat Sheet).
+  redact_keys:
+    - "password"
+    - "token"
+    - "api_key"
+    - "authorization"
+    - "cookie"
