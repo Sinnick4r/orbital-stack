@@ -18,7 +18,7 @@ import json
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Final, NoReturn
+from typing import Any, Final, NoReturn, cast
 
 import polars as pl
 import requests
@@ -418,9 +418,14 @@ class UnoosaIngester:
         Delegates to `_do_fetch_batch` under the runtime-configured retry
         decorator. This split lets tests subclass with `max_attempts=1` to
         avoid waiting through an exponential backoff on every failure case.
+
+        The `cast` is needed because the dynamically-built decorator has
+        type `Callable[..., Any]` — mypy can't rewind that the wrapped
+        `_do_fetch_batch` returns `list[dict[str, Any]]`.
         """
         assert start >= 0, f"start must be non-negative: {start}"
-        return self._retry_decorator(self._do_fetch_batch)(start)
+        wrapped = self._retry_decorator(self._do_fetch_batch)
+        return cast("list[dict[str, Any]]", wrapped(start))
 
     def _do_fetch_batch(self, start: int) -> list[dict[str, Any]]:
         """Fetch a single page from the UNOOSA endpoint.
@@ -459,8 +464,12 @@ class UnoosaIngester:
         return results
 
     def _fetch_total_records(self) -> int:
-        """Retry-wrapped fetch for the total record count."""
-        return self._retry_decorator(self._do_fetch_total_records)()
+        """Retry-wrapped fetch for the total record count.
+
+        See `_fetch_batch` for why the `cast` is required.
+        """
+        wrapped = self._retry_decorator(self._do_fetch_total_records)
+        return cast("int", wrapped())
 
     def _do_fetch_total_records(self) -> int:
         """Ask the endpoint how many records exist in total.
