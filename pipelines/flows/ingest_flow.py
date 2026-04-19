@@ -1,4 +1,4 @@
-"""Weekly UNOOSA ingest flow.
+"""Weekly UNOOSA ingest pipeline.
 
 Orchestrates the four Phase 1 modules end-to-end:
 
@@ -7,9 +7,9 @@ Orchestrates the four Phase 1 modules end-to-end:
     3. Persist it as a hive-partitioned parquet snapshot.
     4. Compute a semantic diff against the previous snapshot.
 
-The flow is a thin orchestrator: each step delegates to a single function
-in `src/orbital/`. Business logic lives there, not here. This split is
-what makes Prefect swappable (see ADR-003).
+This is a thin orchestrator: each step delegates to a single function
+in `src/orbital/`. Business logic lives there, not here. The split
+keeps the orchestration swappable (see ADR-003).
 
 Execution:
     python -m pipelines.flows.ingest_flow [--config PATH] [--base-dir PATH]
@@ -19,6 +19,17 @@ Execution:
 When run in GitHub Actions, structlog emits JSON; in a terminal it
 emits human-readable lines. Configuration is handled in
 `configs/pipeline.yaml`, not here.
+
+Orchestration note:
+    Per ADR-003 "Prefect as library, not server", this module does not
+    use Prefect decorators. Prefect 3.x tries to connect to an ephemeral
+    API server on import-time for `@flow`/`@task`, which contradicts the
+    "no server to maintain" property we want. The orchestration is plain
+    Python: tasks are functions, the entry point calls them in order.
+    Retries at the HTTP level are handled by tenacity inside the
+    ingester; no flow-level retries are needed for a sequential 4-step
+    pipeline. If Phase 2 grows a DAG that genuinely needs concurrency
+    or conditional branches, revisit this choice.
 """
 
 from __future__ import annotations
@@ -32,7 +43,6 @@ from typing import Final
 
 import polars as pl
 import structlog
-from prefect import flow, task
 
 from orbital.ingest.unoosa import UnoosaIngester
 from orbital.quality.schemas import validate_raw
@@ -91,17 +101,16 @@ class FlowResult:
 
 
 # --------------------------------------------------------------------------- #
-# Tasks                                                                        #
+# Pipeline steps                                                               #
 # --------------------------------------------------------------------------- #
 
 
-@task(name="scrape-unoosa", retries=0)
 def scrape_task(config_path: Path) -> pl.DataFrame:
     """Run the UNOOSA scraper configured from YAML.
 
-    Retries are `0` at the Prefect level because the ingester already
-    retries each HTTP batch with tenacity. Doubling up would multiply
-    wait times by the flow retry count.
+    HTTP-level retries are handled by tenacity inside the ingester.
+    This wrapper does not retry on its own — duplicating retries here
+    would multiply wait times with no recovery benefit.
     """
     assert isinstance(config_path, Path), (
         f"config_path must be Path, got {type(config_path).__name__}"
@@ -114,7 +123,6 @@ def scrape_task(config_path: Path) -> pl.DataFrame:
     return df
 
 
-@task(name="validate-schema")
 def validate_task(df: pl.DataFrame) -> pl.DataFrame:
     """Validate the scraped DataFrame against `UnoosaRawSchema`."""
     assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
@@ -122,7 +130,6 @@ def validate_task(df: pl.DataFrame) -> pl.DataFrame:
     return validate_raw(df)
 
 
-@task(name="save-snapshot")
 def save_task(
     df: pl.DataFrame,
     snapshot_date: date,
@@ -142,7 +149,6 @@ def save_task(
     )
 
 
-@task(name="compute-diff")
 def diff_task(
     current: pl.DataFrame,
     snapshot_date: date,
@@ -184,11 +190,10 @@ def diff_task(
 
 
 # --------------------------------------------------------------------------- #
-# Flow                                                                         #
+# Pipeline entry point                                                         #
 # --------------------------------------------------------------------------- #
 
 
-@flow(name="weekly-ingest", retries=2, log_prints=False)
 def weekly_ingest(
     *,
     snapshot_date: date | None = None,
