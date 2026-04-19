@@ -33,6 +33,7 @@ dependencies = [
     "pyprojroot>=0.3",
     "pyyaml>=6.0.2",
     "dvc[s3]>=3.55",
+    "pyarrow>=23.0.1",
 ]
 
 [project.optional-dependencies]
