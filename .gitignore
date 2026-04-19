@@ -1,0 +1,4 @@
+
+# Local scratch scripts — use /tmp/ for these
+tmp/
+.coverage
