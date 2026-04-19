@@ -25,7 +25,7 @@ Implementation:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, cast
 
 import duckdb
 import polars as pl
@@ -33,8 +33,8 @@ import structlog
 
 __all__ = [
     "DIFFABLE_COLUMNS",
-    "DiffReport",
     "KEY_COLUMN",
+    "DiffReport",
     "compute_diff",
 ]
 
@@ -67,6 +67,10 @@ DIFFABLE_COLUMNS: Final[tuple[str, ...]] = (
 
 # Columns present in the snapshot but deliberately not compared.
 _IGNORED_COLUMNS: Final[tuple[str, ...]] = ("Remarks", "External website")
+
+# Expected column count of the `modified_changes` DataFrame:
+# (International Designator, column_name, old_value, new_value).
+_MODIFIED_CHANGES_WIDTH: Final[int] = 4
 
 
 # --------------------------------------------------------------------------- #
@@ -110,7 +114,7 @@ class DiffReport:
         """Number of distinct rows with at least one modified column."""
         if self.modified_changes.height == 0:
             return 0
-        return self.modified_changes.select(pl.col(KEY_COLUMN).n_unique()).item()
+        return cast("int", self.modified_changes.select(pl.col(KEY_COLUMN).n_unique()).item())
 
     @property
     def n_modified_changes(self) -> int:
@@ -197,16 +201,33 @@ def _validate_inputs(previous: pl.DataFrame, current: pl.DataFrame) -> None:
 # --------------------------------------------------------------------------- #
 # DuckDB queries                                                               #
 # --------------------------------------------------------------------------- #
+#
+# Security note on the SQL lint suppressions in this section.
+#
+# All SQL in this module is built via f-string interpolation, which is
+# generally a SQL injection risk. Here it is safe because every interpolated
+# value is either:
+#   - `KEY_COLUMN`, a module-level `Final[str]` hardcoded to the literal
+#     "International Designator". Never derived from user input.
+#   - An element of `DIFFABLE_COLUMNS`, a module-level `Final[tuple[str,...]]`
+#     with compile-time-known contents. The `_build_column_diff_cte` helper
+#     asserts membership before interpolating.
+#
+# DuckDB does not support parameter binding for identifiers (column or table
+# names); only for values. We have no values to interpolate — only identifiers
+# and SQL keywords. The lint suppressions document this deliberately rather
+# than silently suppressing them in pyproject.toml.
 
 
 def _query_added(conn: duckdb.DuckDBPyConnection) -> pl.DataFrame:
     """Rows in `curr` whose key is not in `prev`."""
+    # Identifier-only interpolation from module-level constant KEY_COLUMN.
     sql = f"""
         SELECT curr.*
         FROM curr
         LEFT JOIN prev USING ("{KEY_COLUMN}")
         WHERE prev."{KEY_COLUMN}" IS NULL
-    """
+    """  # noqa: S608
     result = conn.sql(sql).pl()
     assert isinstance(result, pl.DataFrame), "DuckDB returned non-Polars result"
     assert KEY_COLUMN in result.columns, f"result missing key column: {result.columns}"
@@ -215,12 +236,13 @@ def _query_added(conn: duckdb.DuckDBPyConnection) -> pl.DataFrame:
 
 def _query_removed(conn: duckdb.DuckDBPyConnection) -> pl.DataFrame:
     """Rows in `prev` whose key is not in `curr`."""
+    # Identifier-only interpolation from module-level constant KEY_COLUMN.
     sql = f"""
         SELECT prev.*
         FROM prev
         LEFT JOIN curr USING ("{KEY_COLUMN}")
         WHERE curr."{KEY_COLUMN}" IS NULL
-    """
+    """  # noqa: S608
     result = conn.sql(sql).pl()
     assert isinstance(result, pl.DataFrame), "DuckDB returned non-Polars result"
     assert KEY_COLUMN in result.columns, f"result missing key column: {result.columns}"
@@ -240,16 +262,19 @@ def _query_modified(conn: duckdb.DuckDBPyConnection) -> pl.DataFrame:
         per_column_ctes.append(_build_column_diff_cte(col))
     union_all = "\n        UNION ALL\n        ".join(per_column_ctes)
 
+    # CTEs built from whitelisted DIFFABLE_COLUMNS members only.
     sql = f"""
         SELECT *
         FROM (
             {union_all}
         )
         ORDER BY "{KEY_COLUMN}", column_name
-    """
+    """  # noqa: S608
     result = conn.sql(sql).pl()
     assert isinstance(result, pl.DataFrame), "DuckDB returned non-Polars result"
-    assert result.width == 4, f"expected 4 columns, got {result.width}: {result.columns}"
+    assert result.width == _MODIFIED_CHANGES_WIDTH, (
+        f"expected {_MODIFIED_CHANGES_WIDTH} columns, got {result.width}: {result.columns}"
+    )
     return result
 
 
@@ -271,6 +296,8 @@ def _build_column_diff_cte(column: str) -> str:
     assert column != KEY_COLUMN, "cannot diff the key column against itself"
     assert column in DIFFABLE_COLUMNS, f"column not in DIFFABLE_COLUMNS: {column}"
 
+    # `column` is asserted above to be in the DIFFABLE_COLUMNS whitelist;
+    # `KEY_COLUMN` is a module-level constant. Identifier-only interpolation.
     return f"""
         SELECT
             prev."{KEY_COLUMN}" AS "{KEY_COLUMN}",
@@ -282,4 +309,4 @@ def _build_column_diff_cte(column: str) -> str:
         WHERE NULLIF(CAST(prev."{column}" AS VARCHAR), '')
               IS DISTINCT FROM
               NULLIF(CAST(curr."{column}" AS VARCHAR), '')
-    """
+    """  # noqa: S608
