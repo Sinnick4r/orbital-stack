@@ -2,3 +2,6 @@
 # Local scratch scripts — use /tmp/ for these
 tmp/
 .coverage
+data/
+coverage.xml
+**/__pycache__/
