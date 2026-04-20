@@ -1,6 +1,6 @@
 # orbital-stack
 
-[![CI](https://github.com/OWNER/orbital-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/orbital-stack/actions/workflows/ci.yml)
+[![CI](https://github.com/Sinnick4r/orbital-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/Sinnick4r/orbital-stack/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Version](https://img.shields.io/badge/version-0.1.0-green)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](./LICENSE)
@@ -22,7 +22,7 @@ drift detection a real problem rather than a textbook example.
 ## Quick start
 
 ```bash
-git clone https://github.com/OWNER/orbital-stack.git
+git clone https://github.com/Sinnick4r/orbital-stack.git
 cd orbital-stack
 make setup                              # uv sync + pre-commit install
 make test                               # 97 tests, expect all green
