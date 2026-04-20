@@ -5,3 +5,5 @@ tmp/
 data/
 coverage.xml
 **/__pycache__/
+unoosa_registro_*.csv
+unoosa_registro_*.csv
