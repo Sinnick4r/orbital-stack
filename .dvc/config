@@ -1,0 +1,3 @@
+['remote "b2"']
+    url = s3://orbital-stack-dvc
+    endpointurl = https://s3.us-west-002.backblazeb2.com
