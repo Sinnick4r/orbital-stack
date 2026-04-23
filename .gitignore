@@ -8,3 +8,4 @@ coverage.xml
 unoosa_registro_*.csv
 unoosa_registro_*.csv
 
+!data/**/*.dvc
