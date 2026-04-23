@@ -69,9 +69,7 @@ _STRING_COLUMNS: Final[tuple[str, ...]] = (
     "External website",
 )
 
-_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
-    {_INTL_DESIG_COL, _SOR_COL, _LAUNCH_YEAR_COL}
-)
+_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset({_INTL_DESIG_COL, _SOR_COL, _LAUNCH_YEAR_COL})
 
 # ---------------------------------------------------------------------------
 # Result types
@@ -128,9 +126,7 @@ def _check_launch_year(df: pl.DataFrame) -> CheckResult:
     violation_count = (
         pl.DataFrame({"year": year_series})
         .filter(pl.col("year").is_not_null())
-        .filter(
-            (pl.col("year") < FIRST_SATELLITE_YEAR) | (pl.col("year") > upper_bound)
-        )
+        .filter((pl.col("year") < FIRST_SATELLITE_YEAR) | (pl.col("year") > upper_bound))
         .height
     )
 
@@ -152,9 +148,7 @@ def _check_launch_year(df: pl.DataFrame) -> CheckResult:
             violation_count=violation_count,
             valid_range=f"[{FIRST_SATELLITE_YEAR}, {upper_bound}]",
         )
-    return CheckResult(
-        name="launch_year", passed=passed, count=violation_count, detail=detail
-    )
+    return CheckResult(name="launch_year", passed=passed, count=violation_count, detail=detail)
 
 
 def _check_format_year_coherence(df: pl.DataFrame) -> CheckResult:
@@ -188,12 +182,8 @@ def _check_format_year_coherence(df: pl.DataFrame) -> CheckResult:
                 .str.extract(r"^(\d{4})", 1)
                 .cast(pl.Int32, strict=False)
                 .alias("year"),
-                pl.col(_INTL_DESIG_COL)
-                .str.contains(_COSPAR_GREEK_PATTERN)
-                .alias("is_greek"),
-                pl.col(_INTL_DESIG_COL)
-                .str.contains(_COSPAR_MODERN_PATTERN)
-                .alias("is_modern"),
+                pl.col(_INTL_DESIG_COL).str.contains(_COSPAR_GREEK_PATTERN).alias("is_greek"),
+                pl.col(_INTL_DESIG_COL).str.contains(_COSPAR_MODERN_PATTERN).alias("is_modern"),
             ]
         )
         .filter(pl.col("year").is_not_null())
@@ -243,8 +233,7 @@ def _check_xxxx_placeholders(df: pl.DataFrame) -> CheckResult:
         CheckResult for the ``xxxx_placeholders`` check.
     """
     xxxx_count = df.filter(
-        pl.col(_INTL_DESIG_COL).is_not_null()
-        & pl.col(_INTL_DESIG_COL).str.contains("XXXX")
+        pl.col(_INTL_DESIG_COL).is_not_null() & pl.col(_INTL_DESIG_COL).str.contains("XXXX")
     ).height
 
     assert xxxx_count >= 0, "xxxx_count cannot be negative"
@@ -325,9 +314,7 @@ def _check_sor_outliers(df: pl.DataFrame) -> CheckResult:
         CheckResult for the ``sor_outliers`` check.
     """
     outliers = (
-        df.filter(
-            pl.col(_SOR_COL).is_not_null() & (pl.col(_SOR_COL) != "")
-        )
+        df.filter(pl.col(_SOR_COL).is_not_null() & (pl.col(_SOR_COL) != ""))
         .group_by(_SOR_COL)
         .agg(pl.len().alias("n"))
         .filter(pl.col("n") < SOR_MIN_FREQUENCY)
@@ -338,9 +325,7 @@ def _check_sor_outliers(df: pl.DataFrame) -> CheckResult:
 
     passed = outlier_count == 0
     # Cap log output to 10 values to avoid flooding structured logs.
-    outlier_values: list[str] = (
-        outliers[_SOR_COL].to_list()[:10] if not passed else []
-    )
+    outlier_values: list[str] = outliers[_SOR_COL].to_list()[:10] if not passed else []
     detail = (
         f"all SoR values appear ≥{SOR_MIN_FREQUENCY} times"
         if passed
@@ -357,9 +342,7 @@ def _check_sor_outliers(df: pl.DataFrame) -> CheckResult:
             outlier_values=outlier_values,
             min_frequency=SOR_MIN_FREQUENCY,
         )
-    return CheckResult(
-        name="sor_outliers", passed=passed, count=outlier_count, detail=detail
-    )
+    return CheckResult(name="sor_outliers", passed=passed, count=outlier_count, detail=detail)
 
 
 def _check_cardinality(
@@ -402,8 +385,7 @@ def _check_cardinality(
 
     passed = delta <= CARDINALITY_TOLERANCE
     detail = (
-        f"row count {current_count:,} within tolerance of {previous_count:,} "
-        f"(Δ={delta:.2%})"
+        f"row count {current_count:,} within tolerance of {previous_count:,} (Δ={delta:.2%})"
         if passed
         else (
             f"row count drifted {delta:.2%} beyond {CARDINALITY_TOLERANCE:.0%} tolerance "

@@ -166,9 +166,7 @@ class TestLaunchYear:
 
     def test_unparseable_date_is_skipped(self) -> None:
         """Rows where the year cannot be extracted must be silently skipped."""
-        rows = [_base_row({"Date of Launch": "unknown"})] + [
-            _base_row() for _ in range(4)
-        ]
+        rows = [_base_row({"Date of Launch": "unknown"})] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["launch_year"].passed is True
 
@@ -261,9 +259,7 @@ class TestFormatYearCoherence:
         assert report["format_year_coherence"].count == 0
 
     def test_empty_designator_skipped(self) -> None:
-        rows = [_base_row({"International Designator": ""})] + [
-            _base_row() for _ in range(4)
-        ]
+        rows = [_base_row({"International Designator": ""})] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["format_year_coherence"].passed is True
 
@@ -276,9 +272,9 @@ class TestXxxxPlaceholders:
 
     def test_xxxx_always_passes(self) -> None:
         """xxxx_placeholders must pass=True regardless of count."""
-        rows = [
-            _base_row({"International Designator": "1974-XXXX"})
-        ] + [_base_row() for _ in range(4)]
+        rows = [_base_row({"International Designator": "1974-XXXX"})] + [
+            _base_row() for _ in range(4)
+        ]
         report = check_expectations(_make_df(rows))
         assert report["xxxx_placeholders"].passed is True
 
@@ -298,17 +294,13 @@ class TestWhitespaceResidual:
         assert report["whitespace_residual"].count == 0
 
     def test_leading_whitespace_detected(self) -> None:
-        rows = [_base_row({"Name of Space Object": " TESTSAT 1"})] + [
-            _base_row() for _ in range(4)
-        ]
+        rows = [_base_row({"Name of Space Object": " TESTSAT 1"})] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["whitespace_residual"].passed is False
         assert report["whitespace_residual"].count >= 1
 
     def test_trailing_whitespace_detected(self) -> None:
-        rows = [_base_row({"Function": "Earth Observation  "})] + [
-            _base_row() for _ in range(4)
-        ]
+        rows = [_base_row({"Function": "Earth Observation  "})] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["whitespace_residual"].passed is False
 
@@ -327,9 +319,7 @@ class TestWhitespaceResidual:
 
     def test_internal_whitespace_not_flagged(self) -> None:
         """Whitespace in the *middle* of a value must not be flagged."""
-        rows = [_base_row({"Name of Space Object": "TEST SAT 1"})] + [
-            _base_row() for _ in range(4)
-        ]
+        rows = [_base_row({"Name of Space Object": "TEST SAT 1"})] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["whitespace_residual"].passed is True
 
@@ -343,10 +333,9 @@ class TestSorOutliers:
 
     def test_rare_sor_value_fails(self) -> None:
         """A value appearing only once must be flagged as an outlier."""
-        rows = (
-            [_base_row({"State of Registry": "Typo Countryy"})]
-            + [_base_row({"State of Registry": "United States"})] * 5
-        )
+        rows = [_base_row({"State of Registry": "Typo Countryy"})] + [
+            _base_row({"State of Registry": "United States"})
+        ] * 5
         report = check_expectations(_make_df(rows))
         assert report["sor_outliers"].passed is False
         assert report["sor_outliers"].count >= 1
@@ -376,10 +365,9 @@ class TestSorOutliers:
 
     def test_one_below_threshold_is_flagged(self) -> None:
         """A value at SOR_MIN_FREQUENCY - 1 occurrences must be flagged."""
-        rows = (
-            [_base_row({"State of Registry": "Just Below"})] * (SOR_MIN_FREQUENCY - 1)
-            + [_base_row({"State of Registry": "United States"})] * 5
-        )
+        rows = [_base_row({"State of Registry": "Just Below"})] * (SOR_MIN_FREQUENCY - 1) + [
+            _base_row({"State of Registry": "United States"})
+        ] * 5
         report = check_expectations(_make_df(rows))
         assert report["sor_outliers"].passed is False
 
