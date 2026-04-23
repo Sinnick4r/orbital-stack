@@ -21,7 +21,5 @@ jobs:
           cat .dvc/config.local 2>/dev/null || echo "no config.local"
           echo "=== dvc remote list ==="
           uv run dvc remote list
-          echo "=== dvc remote list -v ==="
-          uv run dvc remote list -v
-          echo "=== dvc push dry-run ==="
-          uv run dvc push -r b2 --dry 2>&1 || true
+          echo "=== dvc push (nothing to push) ==="
+          uv run dvc push -r b2
