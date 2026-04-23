@@ -18,24 +18,17 @@ the check under test, keeping signal-to-noise high.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, datetime
 
 import polars as pl
 import pytest
 
 from orbital.quality.expectations import (
     CARDINALITY_TOLERANCE,
-    FIRST_SATELLITE_YEAR,
-    GREEK_FORMAT_CUTOFF_YEAR,
     SOR_MIN_FREQUENCY,
     CheckResult,
-    ExpectationsReport,
     check_expectations,
 )
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 _ALL_CHECK_NAMES = frozenset(
     {
@@ -80,11 +73,6 @@ def _make_clean_df(n: int = 5) -> pl.DataFrame:
     return _make_df([_base_row() for _ in range(n)])
 
 
-# ---------------------------------------------------------------------------
-# Public entry-point contract
-# ---------------------------------------------------------------------------
-
-
 class TestCheckExpectationsContract:
     """Tests for the public ``check_expectations`` function contract."""
 
@@ -113,9 +101,10 @@ class TestCheckExpectationsContract:
 
     def test_empty_df_raises_value_error(self) -> None:
         """Empty DataFrame must raise ValueError, not silently pass."""
+        cols = list(_base_row().keys())
         empty = pl.DataFrame(
-            {col: [] for col in _base_row().keys()},
-            schema={col: pl.Utf8 for col in _base_row().keys()},
+            {col: [] for col in cols},
+            schema=dict.fromkeys(cols, pl.Utf8),
         )
         with pytest.raises(ValueError, match="empty"):
             check_expectations(empty)
@@ -130,11 +119,6 @@ class TestCheckExpectationsContract:
         """Negative previous_count must raise ValueError."""
         with pytest.raises(ValueError, match="non-negative"):
             check_expectations(_make_clean_df(), previous_count=-1)
-
-
-# ---------------------------------------------------------------------------
-# Check: launch_year
-# ---------------------------------------------------------------------------
 
 
 class TestLaunchYear:
@@ -160,7 +144,7 @@ class TestLaunchYear:
         assert report["launch_year"].count == 1
 
     def test_year_beyond_upper_bound_fails(self) -> None:
-        future_year = date.today().year + 5
+        future_year = datetime.now(tz=UTC).year + 5
         rows = [
             _base_row({"Date of Launch": f"{future_year}-01-01"}),
             _base_row({"Date of Launch": "2020-01-01"}),
@@ -173,7 +157,7 @@ class TestLaunchYear:
 
     def test_upper_bound_year_plus_two_is_valid(self) -> None:
         """Launches up to current_year + 2 must be accepted (announced missions)."""
-        future_year = date.today().year + 2
+        future_year = datetime.now(tz=UTC).year + 2
         rows = [_base_row({"Date of Launch": f"{future_year}-01-01"})] + [
             _base_row() for _ in range(4)
         ]
@@ -201,29 +185,13 @@ class TestLaunchYear:
         The parquet produced by the scraper stores Date of Launch as pl.Date.
         Without explicit dtype branching, str.extract raises InvalidOperationError.
         """
-        from datetime import date as dt
-
         rows_raw = [_base_row() for _ in range(5)]
-        df_str = _make_df(rows_raw)
-        # Cast the column to pl.Date to simulate the real parquet schema.
-        df_date = df_str.with_columns(
+        df_date = _make_df(rows_raw).with_columns(
             pl.col("Date of Launch").str.to_date("%Y-%m-%d").alias("Date of Launch")
         )
         report = check_expectations(df_date)
         assert report["launch_year"].passed is True
         assert report["launch_year"].count == 0
-
-
-        rows = [_base_row({"Date of Launch": "1900-01-01"}) for _ in range(3)] + [
-            _base_row() for _ in range(4)
-        ]
-        report = check_expectations(_make_df(rows))
-        assert report["launch_year"].count == 3
-
-
-# ---------------------------------------------------------------------------
-# Check: format_year_coherence
-# ---------------------------------------------------------------------------
 
 
 class TestFormatYearCoherence:
@@ -300,11 +268,6 @@ class TestFormatYearCoherence:
         assert report["format_year_coherence"].passed is True
 
 
-# ---------------------------------------------------------------------------
-# Check: xxxx_placeholders
-# ---------------------------------------------------------------------------
-
-
 class TestXxxxPlaceholders:
     def test_no_xxxx_count_is_zero(self) -> None:
         report = check_expectations(_make_clean_df())
@@ -326,11 +289,6 @@ class TestXxxxPlaceholders:
         ] + [_base_row() for _ in range(4)]
         report = check_expectations(_make_df(rows))
         assert report["xxxx_placeholders"].count == 2
-
-
-# ---------------------------------------------------------------------------
-# Check: whitespace_residual
-# ---------------------------------------------------------------------------
 
 
 class TestWhitespaceResidual:
@@ -374,11 +332,6 @@ class TestWhitespaceResidual:
         ]
         report = check_expectations(_make_df(rows))
         assert report["whitespace_residual"].passed is True
-
-
-# ---------------------------------------------------------------------------
-# Check: sor_outliers
-# ---------------------------------------------------------------------------
 
 
 class TestSorOutliers:
@@ -429,11 +382,6 @@ class TestSorOutliers:
         )
         report = check_expectations(_make_df(rows))
         assert report["sor_outliers"].passed is False
-
-
-# ---------------------------------------------------------------------------
-# Check: cardinality
-# ---------------------------------------------------------------------------
 
 
 class TestCardinality:

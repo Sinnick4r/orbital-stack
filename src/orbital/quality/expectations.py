@@ -24,7 +24,7 @@ All other symbols are private implementation details.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, datetime
 from typing import Final
 
 import polars as pl
@@ -117,7 +117,7 @@ def _check_launch_year(df: pl.DataFrame) -> CheckResult:
     Returns:
         CheckResult for the ``launch_year`` check.
     """
-    upper_bound = date.today().year + 2
+    upper_bound = datetime.now(tz=UTC).year + 2
 
     col = df[_LAUNCH_YEAR_COL]
     if col.dtype == pl.Date:
@@ -398,7 +398,7 @@ def _check_cardinality(
     current_count = len(df)
     delta = abs(current_count - previous_count) / max(previous_count, 1)
 
-    assert 0.0 <= delta, "delta ratio cannot be negative"
+    assert delta >= 0.0, "delta ratio cannot be negative"
 
     passed = delta <= CARDINALITY_TOLERANCE
     detail = (
