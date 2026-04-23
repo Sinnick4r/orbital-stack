@@ -2,7 +2,7 @@
 # Local scratch scripts — use /tmp/ for these
 tmp/
 .coverage
-data/
+data/**
 coverage.xml
 **/__pycache__/
 unoosa_registro_*.csv
