@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.1] — 2026-04-23
+## [0.1.1] - 2026-04-23
 
 Closes the expectations and CI hardening workstream deferred from v0.1.0.
 Adds semantic drift detection, bootstraps DVC storage on Backblaze B2, and
@@ -32,7 +32,7 @@ delivers the first end-to-end automated weekly run with a PR opened by CI.
     between runs).
   - `cardinality`: row-count drift beyond ±5 % vs. the previous snapshot.
     Accepts `previous_count: int | None`; skips gracefully on first run.
-  - `ExpectationsReport = dict[str, CheckResult]` — keyed by check name
+  - `ExpectationsReport = dict[str, CheckResult]` - keyed by check name
     for O(1) access; `CheckResult` is a frozen dataclass.
 - **40 unit tests** for `expectations.py` covering all six checks, the
   `1974-XXXX` false-positive regression, `pl.Date` dtype handling for
@@ -41,7 +41,7 @@ delivers the first end-to-end automated weekly run with a PR opened by CI.
 - **DVC storage on Backblaze B2**: `orbital-stack-dvc` bucket configured
   as default remote (`dvc remote add -d b2 s3://orbital-stack-dvc`).
   Credentials injected via `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
-  environment variables in CI — no `config.local` involved.
+  environment variables in CI - no `config.local` involved.
 - **First automated weekly run**: CI scraped 24,866 rows, pushed the
   snapshot to B2 (`2 files pushed`), and opened PR #1
   (`chore(data): snapshot 2026-04-23`) with the `data/raw/unoosa.dvc`
@@ -59,12 +59,12 @@ delivers the first end-to-end automated weekly run with a PR opened by CI.
   out of git. Added `src/**/__pycache__/` and `**/*.pyc` to suppress
   bytecode from automated commits.
 - **`_check_launch_year`**: handles both `pl.Date` and `pl.Utf8` dtypes
-  for `Date of Launch` — the parquet produced by the scraper stores
+  for `Date of Launch` - the parquet produced by the scraper stores
   the column as `pl.Date`, not `pl.Utf8`.
 
 ### Infrastructure
 
-- **DVC initialized** (`.dvc/`, `.dvcignore`) — first commit of DVC
+- **DVC initialized** (`.dvc/`, `.dvcignore`) - first commit of DVC
   repository metadata.
 - **GitHub Actions workflow permissions** set to read/write + allow PR
   creation to enable `peter-evans/create-pull-request`.
@@ -81,7 +81,7 @@ delivers the first end-to-end automated weekly run with a PR opened by CI.
   dvc push → PR. Total runtime ~25 min (UNOOSA network-bound).
 - `dvc pull` from B2 to clean local environment confirmed `(24866, 12)`.
 
-## [0.1.0] — 2026-04-19
+## [0.1.0] - 2026-04-19
 
 First tagged release. Closes Phase 1 (OrbitWatch) of the project plan.
 A weekly pipeline that scrapes the UNOOSA Online Index of Space Objects,

@@ -1,8 +1,8 @@
-# ADR-003: DVC as storage-only, Prefect as orchestrator — no overlap
+# ADR-003: DVC as storage-only, Prefect as orchestrator - no overlap
 
 ## Status
 
-Accepted — 2026-04-15
+Accepted - 2026-04-15
 
 ## Context
 

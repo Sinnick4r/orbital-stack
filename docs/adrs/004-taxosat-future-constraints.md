@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-15
+Accepted - 2026-04-15
 
 ## Context
 
@@ -25,8 +25,8 @@ code review of any integration PR that touches the Core.
 1. **Schema reservation.** The canonical schema v1
    (`configs/canonical_schema.v1.yaml`) reserves two columns for
    Track B's exclusive use:
-   - `function_canonical` — nullable `str`; populated by Track B.
-   - `function_canonical_confidence` — nullable `float` in
+   - `function_canonical` - nullable `str`; populated by Track B.
+   - `function_canonical_confidence` - nullable `float` in
      `[0.0, 1.0]`.
 
    These columns exist in the Core-produced dataset with `null`
@@ -46,7 +46,7 @@ code review of any integration PR that touches the Core.
 4. **Dataset contract.** Track B pins the exact Core dataset version
    it consumes. Any Core breaking change to the canonical schema
    bumps its major version (v1 → v2), and Track B must re-pin
-   explicitly — no silent upgrades.
+   explicitly - no silent upgrades.
 
 5. **Quality targets are Track B's concern.** The Core does not
    guarantee LLM-quality outputs. Track B publishes its own metrics
@@ -72,4 +72,4 @@ code review of any integration PR that touches the Core.
 **Neutral**
 
 - If Track B is never built, the reserved columns remain as
-  documented null columns — inert, but harmless and justified.
+  documented null columns - inert, but harmless and justified.

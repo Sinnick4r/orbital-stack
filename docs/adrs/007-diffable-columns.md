@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-19
+Accepted - 2026-04-19
 
 ## Context
 
@@ -53,7 +53,7 @@ excluded are `Remarks` and `External website`.
 | Name of Space Object | Yes | Rename events are rare but meaningful (e.g. ownership transfer). |
 | State of Registry | Yes | Jurisdictional change. Core to compliance analysis. |
 | Date of Launch | Yes | Retrospective corrections (misdated launches) are worth tracking. |
-| Status | Yes | active/decayed/partial — central to operational analysis. |
+| Status | Yes | active/decayed/partial - central to operational analysis. |
 | Date of Decay | Yes | Reentry events; high-value signal for orbit_gap analysis. |
 | UN Registered | Yes | Compliance flips; central to the dashboard thesis. |
 | Registration Documents | Yes | New UN documents filed. Tracks compliance timeline. |
@@ -93,7 +93,7 @@ any real change; without this step, half the weekly changelog would be
 
 ### Negative
 
-- Genuine `Remarks` edits that carry information (rare but possible —
+- Genuine `Remarks` edits that carry information (rare but possible -
   e.g. UNOOSA noting a collision event in free text before assigning a
   formal status) are invisible to the diff. Mitigation: the `added`
   and `removed` frames preserve the column, and a future expectations
@@ -134,8 +134,8 @@ speculatively would complicate the tidy long-form structure of
 
 ## References
 
-- `src/orbital/transform/diff.py` — implementation of `DIFFABLE_COLUMNS`
+- `src/orbital/transform/diff.py` - implementation of `DIFFABLE_COLUMNS`
   and `compute_diff`.
-- PLAN.md §1.4 — open question: "qué cuenta como modified".
-- ADR-005 — language policy (this ADR is in English, schema column
+- PLAN.md §1.4 - open question: "qué cuenta como modified".
+- ADR-005 - language policy (this ADR is in English, schema column
   names remain in the UNOOSA-native spelling including spaces).

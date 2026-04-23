@@ -2,15 +2,15 @@
 
 ## Status
 
-Accepted — 2026-04-15
+Accepted - 2026-04-15
 
 ## Context
 
 The MLOps tooling landscape is wide enough to plausibly justify
 Docker Compose, Evidently, Ollama, Argilla, Kafka, Airflow, FastAPI,
 MLflow, Weights & Biases, Great Expectations, and Dagster in a single
-project. At the scale of this project — a weekly-refreshed registry
-of ~25,000 rows — most of that tooling adds maintenance overhead
+project. At the scale of this project - a weekly-refreshed registry
+of ~25,000 rows - most of that tooling adds maintenance overhead
 without proportional value.
 
 Over-tooling is the most common failure mode in personal data
@@ -32,17 +32,17 @@ documented role:
 
 **Explicitly deferred**, each with stated justification:
 
-- **Docker Compose** — not required for the Core; the pipeline runs
+- **Docker Compose** - not required for the Core; the pipeline runs
   in a local venv. Introduced only if/when Track B needs Ollama.
-- **Evidently** — custom drift checks (see `quality:` in
+- **Evidently** - custom drift checks (see `quality:` in
   `configs/pipeline.yaml`) are sufficient at current data volume.
-- **Ollama, Argilla** — Track B concerns; out of scope for the Core.
-- **Prefect server** — GitHub Actions is a sufficient scheduler.
+- **Ollama, Argilla** - Track B concerns; out of scope for the Core.
+- **Prefect server** - GitHub Actions is a sufficient scheduler.
   Running a Prefect server would add a service to operate for no
   current benefit.
-- **FastAPI / REST API** — no real consumer exists; adding one is
+- **FastAPI / REST API** - no real consumer exists; adding one is
   speculative.
-- **Discord / Slack alerts** — a failed weekly PR is itself the
+- **Discord / Slack alerts** - a failed weekly PR is itself the
   signal. Alerting without a real incident pattern is cosmetic.
 
 ## Consequences

@@ -2,17 +2,17 @@
 
 ## Status
 
-Accepted — 2026-04-15
+Accepted - 2026-04-15
 
 ## Context
 
 A personal portfolio project usually fails in one of two ways around
 releases:
 
-1. **Big-bang release** — everything ships at the end. If the project
+1. **Big-bang release** - everything ships at the end. If the project
    pauses at 80% complete, nothing is publicly presentable as a
    finished artifact.
-2. **No release tags at all** — the repo has continuous commits but
+2. **No release tags at all** - the repo has continuous commits but
    no point a reader can cite as "done".
 
 Both harm the project's value as a portfolio piece and as something
@@ -29,10 +29,10 @@ deliverable to its audience.
 
 | Release  | Closes phase                    | Deliverable                                                                                        | Primary audience                                          |
 | -------- | ------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `v0.1.0` | Phase 1 — OrbitWatch            | Versioned weekly pipeline, schema-validated snapshots, quickstart README                           | Data engineers, ecosystem users                           |
-| `v0.5.0` | Phase 2 — Canonical & Enrichment | + canonical dataset published on Hugging Face with dataset card, first public finding, notebook | Data scientists, researchers, data journalists            |
-| `v1.0.0` | Phase 3 — Tratado Silencioso    | + live bilingual narrative dashboard on Cloudflare Pages                                           | General public, space sector, Ibero-American community    |
-| `v1.1.0` | Phase 4 — Hardening             | + ≥70% coverage, mkdocs site with public ADRs, technical blog post                                 | Hiring managers, MLOps evaluators                         |
+| `v0.1.0` | Phase 1 - OrbitWatch            | Versioned weekly pipeline, schema-validated snapshots, quickstart README                           | Data engineers, ecosystem users                           |
+| `v0.5.0` | Phase 2 - Canonical & Enrichment | + canonical dataset published on Hugging Face with dataset card, first public finding, notebook | Data scientists, researchers, data journalists            |
+| `v1.0.0` | Phase 3 - Tratado Silencioso    | + live bilingual narrative dashboard on Cloudflare Pages                                           | General public, space sector, Ibero-American community    |
+| `v1.1.0` | Phase 4 - Hardening             | + ≥70% coverage, mkdocs site with public ADRs, technical blog post                                 | Hiring managers, MLOps evaluators                         |
 
 **Release tasks (per release, ~3h):**
 

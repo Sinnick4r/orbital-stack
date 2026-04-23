@@ -2,15 +2,15 @@
 
 ## Status
 
-Accepted — 2026-04-15
+Accepted - 2026-04-15
 
 ## Context
 
 `orbital-stack` bundles two distinct concerns:
 
-- **Track A (Core)** — a production data product: ingestion, canonical
+- **Track A (Core)** - a production data product: ingestion, canonical
   dataset, narrative dashboard, documentation.
-- **Track B (Research extensions)** — exploratory work starting with
+- **Track B (Research extensions)** - exploratory work starting with
   TaxoSat, which applies LLMs to classify satellite functions.
 
 Combining both in a single tree entangles stable pipeline code with
@@ -26,8 +26,8 @@ constraints.
 ## Decision
 
 The **Core lives as a single cohesive repository** (`orbital-stack`).
-All Core concerns — ingestion, transformation, schemas, dashboard,
-docs, ADRs — are in this tree.
+All Core concerns - ingestion, transformation, schemas, dashboard,
+docs, ADRs - are in this tree.
 
 **Track B research extensions live in separate repositories** (e.g.,
 `orbital-taxosat`) that consume the Core's canonical dataset as a
@@ -47,7 +47,7 @@ The contract between tracks is codified in ADR-004.
 - Track B can evolve on its own CI and release cadence without
   blocking Core releases.
 - If Track B is never built, the Core still reads as a finished
-  project — no empty directories, no dangling references.
+  project - no empty directories, no dangling references.
 
 **Negative**
 
