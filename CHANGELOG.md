@@ -74,3 +74,16 @@ snapshot.
 
 [Unreleased]: https://github.com/Sinnick4r/orbital-stack/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Sinnick4r/orbital-stack/releases/tag/v0.1.0
+
+## [0.1.1] - 2026-04-22
+
+### Added
+- `src/orbital/quality/expectations.py`: six semantic expectation checks
+  (`launch_year`, `format_year_coherence`, `xxxx_placeholders`,
+  `whitespace_residual`, `sor_outliers`, `cardinality`) with structured
+  structlog warnings. No check fails the pipeline.
+- 40 unit tests covering all checks including the `1974-XXXX` edge case
+  and `pl.Date` dtype handling.
+
+[Unreleased]: https://github.com/Sinnick4r/orbital-stack/compare/v0.1.1...HEAD
+[0.1.0]: https://github.com/Sinnick4r/orbital-stack/releases/tag/v0.1.1
