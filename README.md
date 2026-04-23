@@ -72,9 +72,9 @@ on Backblaze B2 via DVC. First automated weekly run opened PR #1 with
 
 **Roadmap**:
 
-- **v0.5.0** — Phase 2: canonical cross-source dataset reconciling
+- **v0.5.0** - Phase 2: canonical cross-source dataset reconciling
   UNOOSA with Celestrak and Space-Track.
-- **v1.0.0** — Phase 3: Evidence.dev dashboard ("el tratado silencioso").
+- **v1.0.0** - Phase 3: Evidence.dev dashboard ("el tratado silencioso").
 
 ## Documentation
 
