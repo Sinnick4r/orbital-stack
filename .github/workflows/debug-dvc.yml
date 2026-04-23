@@ -1,0 +1,27 @@
+name: debug-dvc
+on:
+  workflow_dispatch: {}
+jobs:
+  debug:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+
+      - name: Debug DVC config
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.DVC_B2_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DVC_B2_APP_KEY }}
+        run: |
+          echo "=== .dvc/config ==="
+          cat .dvc/config
+          echo "=== config.local ==="
+          cat .dvc/config.local 2>/dev/null || echo "no config.local"
+          echo "=== dvc remote list ==="
+          uv run dvc remote list
+          echo "=== dvc remote list -v ==="
+          uv run dvc remote list -v
+          echo "=== dvc push dry-run ==="
+          uv run dvc push -r b2 --dry 2>&1 || true
