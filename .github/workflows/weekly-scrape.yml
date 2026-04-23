@@ -63,6 +63,7 @@
           run: uv run dvc add data/raw/unoosa
 
         - name: Push updated data to DVC remote
+          continue-on-error: true
           env:
             AWS_ACCESS_KEY_ID:     ${{ secrets.DVC_B2_KEY_ID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.DVC_B2_APP_KEY }}
