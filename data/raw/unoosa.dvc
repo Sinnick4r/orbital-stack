@@ -1,0 +1,6 @@
+outs:
+- md5: aad06779f9531daee320337b4ad15cee.dir
+  size: 435698
+  nfiles: 1
+  hash: md5
+  path: unoosa
