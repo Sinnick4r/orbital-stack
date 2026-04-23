@@ -35,22 +35,22 @@ Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ## What's inside
 
-- **`src/orbital/ingest/unoosa.py`** — Paginated UNOOSA scraper with
+- **`src/orbital/ingest/unoosa.py`** - Paginated UNOOSA scraper with
   tenacity retries, configurable via YAML, typed Polars output.
-- **`src/orbital/quality/schemas.py`** — Pandera schema for UNOOSA raw
+- **`src/orbital/quality/schemas.py`** - Pandera schema for UNOOSA raw
   snapshots. Strict mode: upstream column additions break the pipeline.
-- **`src/orbital/quality/expectations.py`** — Six empirical drift checks
+- **`src/orbital/quality/expectations.py`** - Six empirical drift checks
   that run after schema validation and emit structured warnings without
   failing the pipeline: launch year range, COSPAR format/year coherence,
   XXXX placeholder tracking, whitespace residual, State of Registry
   outliers, and ±5% cardinality drift.
-- **`src/orbital/utils/io.py`** — Atomic parquet writer with hive
+- **`src/orbital/utils/io.py`** - Atomic parquet writer with hive
   partitioning (`snapshot_date=YYYY-MM-DD`), zstd compression, and
   overwrite protection.
-- **`src/orbital/transform/diff.py`** — DuckDB-backed semantic diff
+- **`src/orbital/transform/diff.py`** - DuckDB-backed semantic diff
   between two snapshots. Added, removed, and per-column modifications
   in tidy long form.
-- **`pipelines/flows/ingest_flow.py`** — CLI entry point orchestrating
+- **`pipelines/flows/ingest_flow.py`** - CLI entry point orchestrating
   scrape → validate → expectations → save → diff.
 
 ## Tech stack
@@ -65,7 +65,7 @@ server.
 
 ## Current status
 
-**v0.1.1** (April 2026) — Phase 1 complete: weekly OrbitWatch pipeline
+**v0.1.1** (April 2026) - Phase 1 complete: weekly OrbitWatch pipeline
 running end-to-end in CI. 145 tests, 96% coverage. Snapshots versioned
 on Backblaze B2 via DVC. First automated weekly run opened PR #1 with
 24,866 rows scraped and pushed. See [CHANGELOG.md](./CHANGELOG.md).
@@ -78,9 +78,9 @@ on Backblaze B2 via DVC. First automated weekly run opened PR #1 with
 
 ## Documentation
 
-- [PLAN.md](./docs/PLAN.md) — full working plan (Spanish)
-- [docs/adrs/](./docs/adrs/) — Architecture Decision Records
-- [CHANGELOG.md](./CHANGELOG.md) — release notes per version
+- [PLAN.md](./docs/PLAN.md) - full working plan (Spanish)
+- [docs/adrs/](./docs/adrs/) - Architecture Decision Records
+- [CHANGELOG.md](./CHANGELOG.md) - release notes per version
 
 ## License
 
