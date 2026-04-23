@@ -47,7 +47,7 @@ jobs:
           uv run dvc remote modify --local b2 secret_access_key "$DVC_B2_APP_KEY"
 
       - name: Pull current data state from DVC remote
-        run: uv run dvc pull
+        run: uv run dvc pull -r b2
 
       - name: Run weekly ingest flow
         env:
@@ -60,7 +60,7 @@ jobs:
         run: uv run dvc add data/raw/unoosa
 
       - name: Push updated data to DVC remote
-        run: uv run dvc push
+        run: uv run dvc push -r b2
 
       - name: Detect changes
         id: detect
