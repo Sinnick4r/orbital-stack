@@ -61,9 +61,7 @@ __all__ = [
 # now; once the project moves to a single version source we read from
 # there. Keeping it constant is fine because Celestrak operators care
 # about the project URL, not the version.
-USER_AGENT: Final[str] = (
-    "orbital-stack/0.5.0 (+https://github.com/Sinnick4r/orbital-stack)"
-)
+USER_AGENT: Final[str] = "orbital-stack/0.5.0 (+https://github.com/Sinnick4r/orbital-stack)"
 
 # Literal prefix Celestrak returns in HTTP 403 bodies when a client
 # tries to download a GROUP that has not refreshed since the client's
@@ -196,9 +194,7 @@ def fetch_celestrak(
     """
     assert isinstance(url, str), f"url must be str, got {type(url).__name__}"
     if not url.startswith("https://celestrak.org/"):
-        raise ValueError(
-            f"fetch_celestrak refuses to send to non-Celestrak URL: {url!r}"
-        )
+        raise ValueError(f"fetch_celestrak refuses to send to non-Celestrak URL: {url!r}")
 
     headers: dict[str, str] = {"User-Agent": USER_AGENT}
     http_client: requests.Session = session if session is not None else requests.Session()
@@ -216,13 +212,9 @@ def fetch_celestrak(
             f"Celestrak request timed out after {timeout_seconds}s: {url}"
         ) from exc
     except requests.ConnectionError as exc:
-        raise CelestrakHTTPError(
-            f"Celestrak connection error: {url} ({exc})"
-        ) from exc
+        raise CelestrakHTTPError(f"Celestrak connection error: {url} ({exc})") from exc
     except requests.RequestException as exc:
-        raise CelestrakHTTPError(
-            f"Celestrak request failed: {url} ({exc})"
-        ) from exc
+        raise CelestrakHTTPError(f"Celestrak request failed: {url} ({exc})") from exc
 
     if response.status_code == _HTTP_FORBIDDEN:
         _handle_403_response(response, url=url)
@@ -264,8 +256,7 @@ def _handle_403_response(response: Response, *, url: str) -> None:
     if body_text.startswith(CELESTRAK_NOT_UPDATED_PREFIX):
         raise CelestrakAlreadyCurrentError(body_text.strip())
     raise CelestrakHTTPError(
-        f"Celestrak returned HTTP 403 for {url}: "
-        f"{_truncate_body_for_log(body_text)}",
+        f"Celestrak returned HTTP 403 for {url}: {_truncate_body_for_log(body_text)}",
         status_code=403,
     )
 

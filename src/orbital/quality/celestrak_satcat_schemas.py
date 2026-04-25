@@ -77,7 +77,14 @@ _VALID_OBJECT_TYPES: Final[tuple[str, ...]] = ("PAY", "R/B", "DEB", "UNK")
 # also contained a single ``'p'`` (lowercase). We include it rather
 # than reject the row; Celestrak controls upstream normalization.
 _VALID_OPS_STATUS_CODES: Final[tuple[str, ...]] = (
-    "+", "-", "P", "B", "S", "X", "D", "p",
+    "+",
+    "-",
+    "P",
+    "B",
+    "S",
+    "X",
+    "D",
+    "p",
 )
 
 # DATA_STATUS_CODE literal set per SATCAT spec.
@@ -296,9 +303,7 @@ def validate_celestrak_satcat_raw(df: pl.DataFrame) -> pl.DataFrame:
         CelestrakSatcatSchemaValidationError: On empty input,
             column-order mismatch, or any schema violation.
     """
-    assert isinstance(df, pl.DataFrame), (
-        f"expected pl.DataFrame, got {type(df).__name__}"
-    )
+    assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
     if df.height == 0:
         raise CelestrakSatcatSchemaValidationError(
             "refusing to validate an empty Celestrak SATCAT DataFrame"
@@ -333,9 +338,7 @@ def _check_column_order(df: pl.DataFrame) -> None:
     Celestrak changed its CSV format — something we want to know
     about.
     """
-    assert isinstance(df, pl.DataFrame), (
-        f"expected pl.DataFrame, got {type(df).__name__}"
-    )
+    assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
     expected: list[str] = list(CELESTRAK_SATCAT_COLUMN_ORDER)
     actual: list[str] = df.columns
     assert len(expected) == _EXPECTED_COLUMN_COUNT, (
@@ -348,7 +351,5 @@ def _check_column_order(df: pl.DataFrame) -> None:
 
     if actual != expected:
         raise CelestrakSatcatSchemaValidationError(
-            "Celestrak SATCAT column order mismatch.\n"
-            f"  expected: {expected}\n"
-            f"  got:      {actual}"
+            f"Celestrak SATCAT column order mismatch.\n  expected: {expected}\n  got:      {actual}"
         )

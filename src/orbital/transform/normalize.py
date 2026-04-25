@@ -50,10 +50,26 @@ __all__ = ["normalize_name"]
 # step 3. Covers I..XX, which is more than enough for satellite names —
 # historical satellites almost never numbered higher than X in Roman form.
 _ROMAN_TO_ARABIC: Final[dict[str, str]] = {
-    "i": "1", "ii": "2", "iii": "3", "iv": "4", "v": "5",
-    "vi": "6", "vii": "7", "viii": "8", "ix": "9", "x": "10",
-    "xi": "11", "xii": "12", "xiii": "13", "xiv": "14", "xv": "15",
-    "xvi": "16", "xvii": "17", "xviii": "18", "xix": "19", "xx": "20",
+    "i": "1",
+    "ii": "2",
+    "iii": "3",
+    "iv": "4",
+    "v": "5",
+    "vi": "6",
+    "vii": "7",
+    "viii": "8",
+    "ix": "9",
+    "x": "10",
+    "xi": "11",
+    "xii": "12",
+    "xiii": "13",
+    "xiv": "14",
+    "xv": "15",
+    "xvi": "16",
+    "xvii": "17",
+    "xviii": "18",
+    "xix": "19",
+    "xx": "20",
 }
 
 # Longest tokens first so "viii" matches before "v" does.
@@ -118,9 +134,7 @@ def normalize_name(name: str) -> str:
 
     # Steps 1-2: Unicode normalization and diacritic stripping.
     decomposed: str = unicodedata.normalize("NFKD", name)
-    without_diacritics: str = "".join(
-        ch for ch in decomposed if not unicodedata.combining(ch)
-    )
+    without_diacritics: str = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
     # Step 3: Lowercase.
     lowered: str = without_diacritics.lower()

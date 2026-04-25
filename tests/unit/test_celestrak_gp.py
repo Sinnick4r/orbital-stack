@@ -134,10 +134,13 @@ def test_already_current_returns_marker_without_dataframe() -> None:
 
 
 def test_http_error_propagates() -> None:
-    with patch(
-        "orbital.ingest.celestrak.gp.fetch_celestrak",
-        side_effect=CelestrakHTTPError("Internal server error", status_code=500),
-    ), pytest.raises(CelestrakHTTPError) as excinfo:
+    with (
+        patch(
+            "orbital.ingest.celestrak.gp.fetch_celestrak",
+            side_effect=CelestrakHTTPError("Internal server error", status_code=500),
+        ),
+        pytest.raises(CelestrakHTTPError) as excinfo,
+    ):
         fetch_gp_catalog()
     assert excinfo.value.status_code == 500
 
@@ -146,23 +149,28 @@ def test_schema_validation_error_propagates() -> None:
     """A row that fails schema validation surfaces as
     CelestrakGpSchemaValidationError, not as a generic error."""
     bad_row: str = (
-        "BAD,not-a-cospar,2026-04-24T08:00:00,15.0,0.001,"
-        "53.0,180.0,0.0,0.0,0,U,1,1,1,0.0,0.0,0"
+        "BAD,not-a-cospar,2026-04-24T08:00:00,15.0,0.001,53.0,180.0,0.0,0.0,0,U,1,1,1,0.0,0.0,0"
     )
     body = _make_csv(bad_row)
-    with patch(
-        "orbital.ingest.celestrak.gp.fetch_celestrak",
-        return_value=_make_response(body),
-    ), pytest.raises(CelestrakGpSchemaValidationError):
+    with (
+        patch(
+            "orbital.ingest.celestrak.gp.fetch_celestrak",
+            return_value=_make_response(body),
+        ),
+        pytest.raises(CelestrakGpSchemaValidationError),
+    ):
         fetch_gp_catalog()
 
 
 def test_empty_response_body_rejected() -> None:
     """An empty body is a real upstream issue, not a happy-path no-op."""
-    with patch(
-        "orbital.ingest.celestrak.gp.fetch_celestrak",
-        return_value=_make_response(b""),
-    ), pytest.raises(ValueError, match="empty"):
+    with (
+        patch(
+            "orbital.ingest.celestrak.gp.fetch_celestrak",
+            return_value=_make_response(b""),
+        ),
+        pytest.raises(ValueError, match="empty"),
+    ):
         fetch_gp_catalog()
 
 

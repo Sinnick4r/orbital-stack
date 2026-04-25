@@ -89,14 +89,16 @@ def test_validates_minimal_valid_row(valid_df: pl.DataFrame) -> None:
 
 def test_validates_real_world_starlink_row(valid_row: dict[str, Any]) -> None:
     """Realistic Starlink-shaped row."""
-    valid_row.update({
-        "OBJECT_NAME": "STARLINK-30123",
-        "OBJECT_ID": "2024-001A",
-        "MEAN_MOTION": 15.06,
-        "ECCENTRICITY": 0.0001,
-        "INCLINATION": 53.0,
-        "NORAD_CAT_ID": 58000,
-    })
+    valid_row.update(
+        {
+            "OBJECT_NAME": "STARLINK-30123",
+            "OBJECT_ID": "2024-001A",
+            "MEAN_MOTION": 15.06,
+            "ECCENTRICITY": 0.0001,
+            "INCLINATION": 53.0,
+            "NORAD_CAT_ID": 58000,
+        }
+    )
     validate_celestrak_gp_raw(_df_from_row(valid_row))
 
 

@@ -39,20 +39,17 @@ _HEADER: str = (
 
 # First row of the real 2026-04-25 catalog: SPUTNIK-1's rocket body.
 _ROW_SPUTNIK_RB: str = (
-    "SL-1 R/B,1957-001A,1,R/B,D,CIS,1957-10-04,TYMSC,1957-12-01,"
-    "96.19,65.10,938,214,20.4200,,EA,IMP"
+    "SL-1 R/B,1957-001A,1,R/B,D,CIS,1957-10-04,TYMSC,1957-12-01,96.19,65.10,938,214,20.4200,,EA,IMP"
 )
 
 # Active payload: STARLINK with empty decay date and empty data status.
 _ROW_STARLINK: str = (
-    "STARLINK-30123,2024-001A,58000,PAY,+,US,2024-01-01,SLC4E,,"
-    "90.5,53.0,550,540,,,EA,ORB"
+    "STARLINK-30123,2024-001A,58000,PAY,+,US,2024-01-01,SLC4E,,90.5,53.0,550,540,,,EA,ORB"
 )
 
 # Decayed debris with zero orbital elements (the empirical pattern).
 _ROW_ZERO_ORBIT_DEBRIS: str = (
-    "SCOUT X-4 DEB,1963-053D,747,DEB,D,US,1963-12-19,WLPIS,1964-01-23,"
-    "0,0,0,0,,,EA,IMP"
+    "SCOUT X-4 DEB,1963-053D,747,DEB,D,US,1963-12-19,WLPIS,1964-01-23,0,0,0,0,,,EA,IMP"
 )
 
 
@@ -177,33 +174,39 @@ def test_already_current_returns_marker() -> None:
 
 
 def test_http_error_propagates() -> None:
-    with patch(
-        "orbital.ingest.celestrak.satcat.fetch_celestrak",
-        side_effect=CelestrakHTTPError("Internal server error", status_code=500),
-    ), pytest.raises(CelestrakHTTPError) as excinfo:
+    with (
+        patch(
+            "orbital.ingest.celestrak.satcat.fetch_celestrak",
+            side_effect=CelestrakHTTPError("Internal server error", status_code=500),
+        ),
+        pytest.raises(CelestrakHTTPError) as excinfo,
+    ):
         fetch_satcat_catalog()
     assert excinfo.value.status_code == 500
 
 
 def test_schema_validation_error_propagates() -> None:
     """A row with a bad OBJECT_TYPE surfaces as a SATCAT-specific error."""
-    bad_row: str = (
-        "BAD,1999-001A,99999,ROCKET,+,US,1999-01-01,SLC4E,,"
-        "90.0,53.0,550,540,,,EA,ORB"
-    )
+    bad_row: str = "BAD,1999-001A,99999,ROCKET,+,US,1999-01-01,SLC4E,,90.0,53.0,550,540,,,EA,ORB"
     body = _make_csv(bad_row)
-    with patch(
-        "orbital.ingest.celestrak.satcat.fetch_celestrak",
-        return_value=_make_response(body),
-    ), pytest.raises(CelestrakSatcatSchemaValidationError):
+    with (
+        patch(
+            "orbital.ingest.celestrak.satcat.fetch_celestrak",
+            return_value=_make_response(body),
+        ),
+        pytest.raises(CelestrakSatcatSchemaValidationError),
+    ):
         fetch_satcat_catalog()
 
 
 def test_empty_response_body_rejected() -> None:
-    with patch(
-        "orbital.ingest.celestrak.satcat.fetch_celestrak",
-        return_value=_make_response(b""),
-    ), pytest.raises(ValueError, match="empty"):
+    with (
+        patch(
+            "orbital.ingest.celestrak.satcat.fetch_celestrak",
+            return_value=_make_response(b""),
+        ),
+        pytest.raises(ValueError, match="empty"),
+    ):
         fetch_satcat_catalog()
 
 

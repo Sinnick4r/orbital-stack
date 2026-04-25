@@ -91,9 +91,11 @@ def test_403_with_not_updated_body_raises_already_current() -> None:
 @responses.activate
 def test_403_with_other_body_raises_http_error() -> None:
     responses.add(
-        responses.GET, GP_URL,
+        responses.GET,
+        GP_URL,
         body="Forbidden: rate limit exceeded",
-        status=403, content_type="text/plain",
+        status=403,
+        content_type="text/plain",
     )
     with pytest.raises(CelestrakHTTPError) as excinfo:
         fetch_celestrak(GP_URL)
@@ -150,7 +152,8 @@ def test_long_error_body_is_truncated_in_message() -> None:
 @responses.activate
 def test_connection_error_raises_http_error_without_status() -> None:
     responses.add(
-        responses.GET, GP_URL,
+        responses.GET,
+        GP_URL,
         body=requests.ConnectionError("Connection refused"),
     )
     with pytest.raises(CelestrakHTTPError) as excinfo:

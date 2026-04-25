@@ -33,9 +33,7 @@ from orbital.ingest.celestrak.satcat import _parse_csv_body
 from orbital.quality.celestrak_satcat_schemas import validate_celestrak_satcat_raw
 from orbital.utils.paths import PROJECT_ROOT
 
-FIXTURE_PATH: Path = (
-    PROJECT_ROOT / "tests" / "fixtures" / "celestrak_satcat_real.csv"
-)
+FIXTURE_PATH: Path = PROJECT_ROOT / "tests" / "fixtures" / "celestrak_satcat_real.csv"
 
 
 @pytest.fixture(scope="module")

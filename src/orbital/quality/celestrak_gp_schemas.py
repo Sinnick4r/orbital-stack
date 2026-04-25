@@ -278,9 +278,7 @@ def validate_celestrak_gp_raw(df: pl.DataFrame) -> pl.DataFrame:
         CelestrakGpSchemaValidationError: On empty input, column-
             order mismatch, or any schema violation.
     """
-    assert isinstance(df, pl.DataFrame), (
-        f"expected pl.DataFrame, got {type(df).__name__}"
-    )
+    assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
     if df.height == 0:
         raise CelestrakGpSchemaValidationError(
             "refusing to validate an empty Celestrak GP DataFrame"
@@ -315,22 +313,17 @@ def _check_column_order(df: pl.DataFrame) -> None:
     something we want to know about (it might mean Celestrak changed
     its CSV format).
     """
-    assert isinstance(df, pl.DataFrame), (
-        f"expected pl.DataFrame, got {type(df).__name__}"
-    )
+    assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
     expected: list[str] = list(CELESTRAK_GP_COLUMN_ORDER)
     actual: list[str] = df.columns
     assert len(expected) == _EXPECTED_COLUMN_COUNT, (
         f"CELESTRAK_GP_COLUMN_ORDER has drifted to {len(expected)} entries"
     )
     assert len(CELESTRAK_GP_POLARS_SCHEMA) == len(expected), (
-        f"CELESTRAK_GP_POLARS_SCHEMA drifted: "
-        f"{len(CELESTRAK_GP_POLARS_SCHEMA)} vs {len(expected)}"
+        f"CELESTRAK_GP_POLARS_SCHEMA drifted: {len(CELESTRAK_GP_POLARS_SCHEMA)} vs {len(expected)}"
     )
 
     if actual != expected:
         raise CelestrakGpSchemaValidationError(
-            "Celestrak GP column order mismatch.\n"
-            f"  expected: {expected}\n"
-            f"  got:      {actual}"
+            f"Celestrak GP column order mismatch.\n  expected: {expected}\n  got:      {actual}"
         )

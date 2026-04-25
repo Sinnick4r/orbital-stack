@@ -93,9 +93,7 @@ def test_all_manifest_columns_present(schema: dict[str, Any], manifest: dict[str
     """Every column in the frozen manifest is present in the current YAML."""
     schema_names = {col["name"] for col in schema["columns"]}
     missing = [m["name"] for m in manifest["columns"] if m["name"] not in schema_names]
-    assert not missing, (
-        f"columns missing from current YAML (breaking per ADR-008): {missing}"
-    )
+    assert not missing, f"columns missing from current YAML (breaking per ADR-008): {missing}"
 
 
 def test_manifest_column_dtypes_preserved(schema: dict[str, Any], manifest: dict[str, Any]) -> None:

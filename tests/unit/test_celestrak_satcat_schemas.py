@@ -94,22 +94,24 @@ def test_validates_minimal_valid_row(valid_df: pl.DataFrame) -> None:
 
 def test_validates_active_payload(valid_row: dict[str, Any]) -> None:
     """Active payload row: PAY, OPS=+, no decay date."""
-    valid_row.update({
-        "OBJECT_NAME": "STARLINK-30123",
-        "OBJECT_ID": "2024-001A",
-        "NORAD_CAT_ID": 58000,
-        "OBJECT_TYPE": "PAY",
-        "OPS_STATUS_CODE": "+",
-        "OWNER": "US",
-        "LAUNCH_DATE": date(2024, 1, 1),
-        "DECAY_DATE": None,
-        "PERIOD": 90.0,
-        "INCLINATION": 53.0,
-        "APOGEE": 550,
-        "PERIGEE": 540,
-        "RCS": None,
-        "ORBIT_TYPE": "ORB",
-    })
+    valid_row.update(
+        {
+            "OBJECT_NAME": "STARLINK-30123",
+            "OBJECT_ID": "2024-001A",
+            "NORAD_CAT_ID": 58000,
+            "OBJECT_TYPE": "PAY",
+            "OPS_STATUS_CODE": "+",
+            "OWNER": "US",
+            "LAUNCH_DATE": date(2024, 1, 1),
+            "DECAY_DATE": None,
+            "PERIOD": 90.0,
+            "INCLINATION": 53.0,
+            "APOGEE": 550,
+            "PERIGEE": 540,
+            "RCS": None,
+            "ORBIT_TYPE": "ORB",
+        }
+    )
     validate_celestrak_satcat_raw(_df_from_row(valid_row))
 
 
@@ -128,15 +130,17 @@ def test_validates_decayed_debris_with_zero_orbital_elements(
     these exact zero values. They are not data errors; the object
     decayed and end-of-life elements were reported as zeros.
     """
-    valid_row.update({
-        "OBJECT_TYPE": "DEB",
-        "OPS_STATUS_CODE": "D",
-        "PERIOD": 0.0,
-        "INCLINATION": 0.0,
-        "APOGEE": 0,
-        "PERIGEE": 0,
-        "ORBIT_TYPE": "IMP",
-    })
+    valid_row.update(
+        {
+            "OBJECT_TYPE": "DEB",
+            "OPS_STATUS_CODE": "D",
+            "PERIOD": 0.0,
+            "INCLINATION": 0.0,
+            "APOGEE": 0,
+            "PERIGEE": 0,
+            "ORBIT_TYPE": "IMP",
+        }
+    )
     validate_celestrak_satcat_raw(_df_from_row(valid_row))
 
 
@@ -293,13 +297,15 @@ def test_accepts_null_decay_date_for_active_object(valid_row: dict[str, Any]) ->
 
 def test_accepts_null_optional_orbital_fields(valid_row: dict[str, Any]) -> None:
     """PERIOD, INCLINATION, APOGEE, PERIGEE, RCS can all be null."""
-    valid_row.update({
-        "PERIOD": None,
-        "INCLINATION": None,
-        "APOGEE": None,
-        "PERIGEE": None,
-        "RCS": None,
-    })
+    valid_row.update(
+        {
+            "PERIOD": None,
+            "INCLINATION": None,
+            "APOGEE": None,
+            "PERIGEE": None,
+            "RCS": None,
+        }
+    )
     validate_celestrak_satcat_raw(_df_from_row(valid_row))
 
 
