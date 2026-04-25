@@ -1,0 +1,43 @@
+# Frozen manifest of canonical schema v1.0.0.
+#
+# DO NOT EDIT except as part of a major version bump (v2.0.0+).
+#
+# The contract test tests/contract/test_canonical_schema_evolution.py
+# asserts that configs/canonical_schema.v1.yaml still includes every
+# column listed here with the same dtype and nullability, in the same
+# relative order.
+#
+# Adding a new column to the YAML without editing this manifest is
+# correct behavior for an additive change under ADR-008 (minor bump).
+# Removing an entry from this manifest, changing a dtype, changing
+# nullability, or reordering existing entries is only permitted as part
+# of an ADR-008 breaking change (major bump) and must be accompanied by
+# a superseding ADR.
+
+schema_major_version: 1
+
+columns:
+  - {name: cospar_id,                     dtype: str,     nullable: false}
+  - {name: norad_cat_id,                  dtype: int64,   nullable: true}
+  - {name: name_unoosa,                   dtype: str,     nullable: true}
+  - {name: object_name_celestrak,         dtype: str,     nullable: true}
+  - {name: state_unoosa,                  dtype: str,     nullable: true}
+  - {name: country_celestrak,             dtype: str,     nullable: true}
+  - {name: launch_date_unoosa,            dtype: date,    nullable: true}
+  - {name: launch_date_celestrak,         dtype: date,    nullable: true}
+  - {name: status,                        dtype: str,     nullable: true}
+  - {name: date_of_decay,                 dtype: date,    nullable: true}
+  - {name: un_registered,                 dtype: bool,    nullable: true}
+  - {name: registration_documents,        dtype: str,     nullable: true}
+  - {name: function,                      dtype: str,     nullable: true}
+  - {name: mean_motion,                   dtype: float64, nullable: true}
+  - {name: eccentricity,                  dtype: float64, nullable: true}
+  - {name: orbit_regime_canonical,        dtype: str,     nullable: true}
+  - {name: orbit_regime_confidence,       dtype: float64, nullable: true}
+  - {name: match_source,                  dtype: str,     nullable: false}
+  - {name: match_score,                   dtype: float64, nullable: true}
+  - {name: match_confidence,              dtype: str,     nullable: false}
+  - {name: source_presence,               dtype: str,     nullable: false}
+  - {name: function_canonical,            dtype: str,     nullable: true}
+  - {name: function_canonical_confidence, dtype: float64, nullable: true}
+  - {name: snapshot_date,                 dtype: date,    nullable: false}

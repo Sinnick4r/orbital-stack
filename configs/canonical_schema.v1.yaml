@@ -1,0 +1,492 @@
+# orbital-stack canonical dataset — schema v1.
+#
+# Public contract. See docs/adrs/ for the decisions behind this file:
+#   - ADR-008: evolution rules (additive vs breaking).
+#   - ADR-009: row-level semantics, PK, conflicts, reserved columns.
+#   - ADR-010: v0.5.0 scope (Space-Track deferred to v0.6.0).
+#   - ADR-011: Celestrak is ingested as two endpoints (GP + SATCAT),
+#              each documented separately in `source.available_in`.
+#              Corrigenda to ADR-009 on source column names live here.
+#              Note: ADR-011 also declares an `object_type_celestrak`
+#              column sourced from SATCAT. That column is NOT yet in
+#              this schema — it will be added as an additive change
+#              (v1.1.0 minor bump) once the SATCAT ingester ships.
+#   - ADR-012: Orbit regime classifier rule adjustments. Does not
+#              change this schema; listed for cross-reference.
+#
+# Changes to this file are classified per ADR-008. Adding a new nullable
+# column at the end is additive (minor bump). Renames, reorders, dtype
+# changes, tightening constraints, and removals are breaking (major bump).
+# The contract test at tests/contract/test_canonical_schema_evolution.py
+# enforces this against tests/fixtures/canonical_schema_v1_manifest.yaml.
+
+schema_version: "1.0.0"
+schema_major_version: 1
+
+description: |
+  Canonical cross-source dataset combining the UNOOSA registry and the
+  Celestrak catalog. Published under snapshot-partitioned parquet
+  (canonical/snapshot_date=YYYY-MM-DD/data.parquet).
+
+  Celestrak is ingested from two endpoints (ADR-011):
+    - celestrak_gp: General Perturbations feed. Orbital state
+      elements (mean_motion, eccentricity, epoch, etc.) plus name
+      and NORAD catalog ID.
+    - celestrak_satcat: Satellite catalog. Identity metadata
+      (launch date, owner, decay date, object type) and historical
+      coverage including decayed objects and debris.
+
+  Row identity is cospar_id (International Designator), unique per
+  snapshot. Objects present in only one source are published with
+  the missing side's fields null, distinguished via source_presence
+  and match_source.
+
+  Space-Track integration and full orbit_gap analysis are deferred
+  to v0.6.0 per ADR-010.
+
+# Sources enumerated for cross-reference. The `source.available_in`
+# annotations on each column below use these identifiers.
+sources:
+  - id: unoosa
+    description: "UNOOSA Online Index of Objects Launched into Outer Space."
+  - id: celestrak_gp
+    description: |
+      Celestrak General Perturbations endpoint. CSV feed of currently
+      tracked objects with orbital state elements.
+    endpoint: "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=CSV"
+  - id: celestrak_satcat
+    description: |
+      Celestrak Satellite Catalog endpoint. CSV feed with identity
+      metadata, launch history, and decay information for all
+      cataloged objects including decayed and debris.
+    endpoint: "https://celestrak.org/satcat/records.php?FORMAT=CSV"
+
+# Top-level precedence rule for single-source canonical fields.
+# Fields that publish per-source columns (name_*, state_*/country_*,
+# launch_date_*) bypass this rule; see `source.kind: per_source` below.
+# Celestrak is a single precedence tier even though it is ingested as
+# two endpoints — GP and SATCAT are joined inside the canonical flow
+# (ADR-011) before precedence is applied.
+precedence:
+  order: [unoosa, spacetrack, celestrak]
+  rule: first_non_null_wins
+  rationale: |
+    UNOOSA is the authoritative legal registry; the project thesis
+    depends on its integrity. Space-Track is government-maintained
+    and more conservative than the community-maintained Celestrak
+    feeds. Celestrak is the operational fallback. Changing the
+    order is a breaking change under ADR-008. Space-Track is listed
+    now even though v0.5.0 does not ingest it, so the rule does not
+    change on v0.6.0 arrival.
+
+columns:
+
+  # ---------------------------------------------------------------------
+  # 1. Identity
+  # ---------------------------------------------------------------------
+
+  - name: cospar_id
+    dtype: str
+    nullable: false
+    role: primary_key
+    description: |
+      COSPAR International Designator. Primary key, unique per
+      snapshot. Derived from UNOOSA "International Designator" or,
+      when the row originates in Celestrak with no UNOOSA match,
+      from Celestrak's OBJECT_ID field (same semantic, different
+      column name in the CSV).
+    source:
+      kind: per_source_fallback
+      origins: [unoosa, celestrak_gp, celestrak_satcat]
+      source_columns:
+        unoosa: "International Designator"
+        celestrak_gp: OBJECT_ID
+        celestrak_satcat: OBJECT_ID
+      notes: |
+        Celestrak rows without a populated OBJECT_ID are excluded
+        from the canonical per ADR-009 §2 and logged as
+        `canonical_row_excluded` events. We do not fabricate
+        cospar_ids. Empirical observation from
+        notebooks/exploration/celestrak_discovery.ipynb on
+        2026-04-24: OBJECT_ID was populated at 100% in the active
+        GP feed.
+    constraint:
+      type: regex
+      pattern: '^\d{4,5}-[A-Z0-9*\- ]+$'
+      rationale: |
+        Matches modern (YYYY-NNN[A-Z]) and historical (YYYY-Greek)
+        designators. See orbital.quality.schemas._COSPAR_PATTERN.
+
+  - name: norad_cat_id
+    dtype: int64
+    nullable: true
+    role: identity
+    description: |
+      NORAD Catalog Number. Populated when a Celestrak GP or SATCAT
+      entry is linked; null for UNOOSA-only rows and pre-Celestrak
+      historical objects. Also serves as the join key between GP and
+      SATCAT inside the canonical flow (ADR-011).
+    source:
+      kind: per_source_fallback
+      origins: [celestrak_gp, celestrak_satcat]
+      source_columns:
+        celestrak_gp: NORAD_CAT_ID
+        celestrak_satcat: NORAD_CAT_ID
+
+  # ---------------------------------------------------------------------
+  # 2. Per-source identity (names)
+  # ---------------------------------------------------------------------
+
+  - name: name_unoosa
+    dtype: str
+    nullable: true
+    role: per_source
+    description: "Object name as registered with UNOOSA."
+    source:
+      kind: per_source
+      origin: unoosa
+      source_column: "Name of Space Object"
+
+  - name: object_name_celestrak
+    dtype: str
+    nullable: true
+    role: per_source
+    description: |
+      Object name in the Celestrak catalog. Drawn from the GP feed
+      when present (GP is the higher-freshness source for currently
+      tracked objects); falls back to SATCAT for decayed objects
+      and debris that GP no longer carries.
+    source:
+      kind: per_source
+      origin: celestrak
+      source_columns:
+        celestrak_gp: OBJECT_NAME
+        celestrak_satcat: OBJECT_NAME
+
+  # ---------------------------------------------------------------------
+  # 3. Per-source jurisdiction / operator
+  # ---------------------------------------------------------------------
+
+  - name: state_unoosa
+    dtype: str
+    nullable: true
+    role: per_source
+    description: |
+      Legal state of registry per UNOOSA. Semantic: the state that
+      bears international-law responsibility for the object.
+      Intentionally distinct from country_celestrak, which is
+      operational.
+    source:
+      kind: per_source
+      origin: unoosa
+      source_column: "State of Registry"
+
+  - name: country_celestrak
+    dtype: str
+    nullable: true
+    role: per_source
+    description: |
+      Operator / owner country per Celestrak SATCAT. Uses
+      Celestrak's own code set (e.g., 'US', 'PRC'), not ISO 3166.
+      Semantic: operator / ITU origin, not legal registry.
+    source:
+      kind: per_source
+      origin: celestrak_satcat
+      source_column: OWNER
+      notes: |
+        Corrigenda to ADR-009: the source column is named OWNER in
+        SATCAT, not COUNTRY_CODE. The GP endpoint does not include
+        this field (empirically confirmed 2026-04-24).
+
+  # ---------------------------------------------------------------------
+  # 4. Per-source launch date
+  # ---------------------------------------------------------------------
+
+  - name: launch_date_unoosa
+    dtype: date
+    nullable: true
+    role: per_source
+    description: |
+      Launch date per UNOOSA. Partial dates (year-only, year-month)
+      are parsed to start-of-period by the ingester; see
+      orbital.ingest.unoosa.
+    source:
+      kind: per_source
+      origin: unoosa
+      source_column: "Date of Launch"
+    constraint:
+      type: date_range
+      min: "1957-10-04"
+      rationale: "Sputnik-1 launch; earlier values are parse errors."
+
+  - name: launch_date_celestrak
+    dtype: date
+    nullable: true
+    role: per_source
+    description: |
+      Launch date per Celestrak SATCAT. The GP endpoint does not
+      provide this field (empirically confirmed 2026-04-24); SATCAT
+      is the sole Celestrak-side origin.
+    source:
+      kind: per_source
+      origin: celestrak_satcat
+      source_column: LAUNCH_DATE
+    constraint:
+      type: date_range
+      min: "1957-10-04"
+
+  # ---------------------------------------------------------------------
+  # 5. Canonical operational state
+  # ---------------------------------------------------------------------
+
+  - name: status
+    dtype: str
+    nullable: true
+    role: canonical
+    description: |
+      Operational status as-of snapshot. Free text from UNOOSA
+      ('active', 'decayed', 'partial', etc.). No fixed literal set
+      in v1 because UNOOSA does not publish one; consumers who
+      require a closed enumeration must normalize downstream.
+    source:
+      kind: canonical
+      available_in: [unoosa]
+
+  - name: date_of_decay
+    dtype: date
+    nullable: true
+    role: canonical
+    description: |
+      Reentry / decay date. Null while the object is in orbit.
+      Central signal for the orbit_gap analysis (v0.6.0). Celestrak
+      side comes from SATCAT; GP does not carry this field.
+    source:
+      kind: canonical
+      available_in: [unoosa, celestrak_satcat]
+      source_columns:
+        celestrak_satcat: DECAY_DATE
+      notes: |
+        Celestrak SATCAT's DECAY_DATE is often more current than
+        UNOOSA for recent decays; UNOOSA wins per top-level
+        precedence. A future ADR may override this for this
+        specific field if the evidence warrants it.
+    constraint:
+      type: date_range
+      min: "1957-10-04"
+
+  - name: un_registered
+    dtype: bool
+    nullable: true
+    role: canonical
+    description: |
+      True if the object is flagged as UN-registered per UNOOSA.
+      Central to the compliance thesis. Null when UNOOSA does not
+      provide the flag.
+    source:
+      kind: canonical
+      available_in: [unoosa]
+
+  - name: registration_documents
+    dtype: str
+    nullable: true
+    role: canonical
+    description: |
+      UN document symbols, comma-separated. Compliance timeline.
+    source:
+      kind: canonical
+      available_in: [unoosa]
+
+  - name: function
+    dtype: str
+    nullable: true
+    role: canonical
+    description: |
+      Free-text declared function from UNOOSA. Track B
+      (orbital-taxosat) produces a classified version in
+      function_canonical.
+    source:
+      kind: canonical
+      available_in: [unoosa]
+
+  # ---------------------------------------------------------------------
+  # 6. Canonical orbit parameters
+  # ---------------------------------------------------------------------
+
+  - name: mean_motion
+    dtype: float64
+    nullable: true
+    role: canonical
+    description: |
+      Mean motion in revolutions per day. Null for UNOOSA-only rows
+      and for objects without a current TLE. Sourced exclusively
+      from the Celestrak GP feed; SATCAT does not carry this field.
+      Input to orbit_regime_canonical.
+    source:
+      kind: canonical
+      available_in: [celestrak_gp]
+      source_columns:
+        celestrak_gp: MEAN_MOTION
+    constraint:
+      type: range
+      min: 0.0
+      max: 20.0
+      rationale: "Plausible upper bound; LEO tops out near 16 revs/day."
+
+  - name: eccentricity
+    dtype: float64
+    nullable: true
+    role: canonical
+    description: "Orbit eccentricity. 0 = circular, <1 = elliptical."
+    source:
+      kind: canonical
+      available_in: [celestrak_gp]
+      source_columns:
+        celestrak_gp: ECCENTRICITY
+    constraint:
+      type: range
+      min: 0.0
+      max: 1.0
+      inclusive: min_only
+
+  - name: orbit_regime_canonical
+    dtype: str
+    nullable: true
+    role: canonical
+    description: |
+      Deterministic LEO/MEO/GEO/HEO classification from mean_motion
+      and eccentricity. Computed in v0.5.0 by
+      orbital.transform.orbit_regime.classify_orbit_regime per
+      ADR-012's revised rules. Null when either input is null.
+    source:
+      kind: computed
+      computed_by: orbital.transform.orbit_regime.classify_orbit_regime
+    constraint:
+      type: literal_set
+      values: [LEO, MEO, GEO, HEO, unknown]
+
+  - name: orbit_regime_confidence
+    dtype: float64
+    nullable: true
+    role: reserved
+    description: |
+      Reserved for future non-deterministic orbit classifiers
+      (sun-synchronous, Molniya, graveyard). v0.5.0 writes null.
+    source:
+      kind: reserved
+      reserved_for: "post-v0.5.0 classifiers (ADR-009 §4)"
+    constraint:
+      type: range
+      min: 0.0
+      max: 1.0
+
+  # ---------------------------------------------------------------------
+  # 7. Match provenance
+  # ---------------------------------------------------------------------
+
+  - name: match_source
+    dtype: str
+    nullable: false
+    role: match_provenance
+    description: |
+      How this row was matched across UNOOSA and Celestrak. See
+      orbital.transform.matching.
+    source:
+      kind: computed
+      computed_by: orbital.transform.matching
+    constraint:
+      type: literal_set
+      values: [cospar, name_date, fuzzy, unmatched_unoosa, unmatched_celestrak]
+
+  - name: match_score
+    dtype: float64
+    nullable: true
+    role: match_provenance
+    description: |
+      Similarity score for fuzzy matches, rapidfuzz token_set_ratio
+      normalized to [0, 1]. Null for all non-fuzzy match_source
+      values.
+    source:
+      kind: computed
+      computed_by: orbital.transform.matching
+    constraint:
+      type: range
+      min: 0.0
+      max: 1.0
+
+  - name: match_confidence
+    dtype: str
+    nullable: false
+    role: match_provenance
+    description: |
+      Coarse confidence tier derived from match_source and
+      match_score. Rules: cospar -> high; name_date -> medium;
+      fuzzy >= 0.95 -> medium; fuzzy < 0.95 -> low;
+      unmatched_* -> low.
+    source:
+      kind: computed
+      computed_by: orbital.transform.matching
+    constraint:
+      type: literal_set
+      values: [high, medium, low]
+
+  - name: source_presence
+    dtype: str
+    nullable: false
+    role: match_provenance
+    description: |
+      Which upstream sources this row appears in. Redundant with
+      match_source but cheaper for downstream filters. Celestrak
+      presence here means "present in GP or SATCAT"; the two are
+      not distinguished at this level.
+    source:
+      kind: computed
+      computed_by: orbital.transform.matching
+    constraint:
+      type: literal_set
+      values: [both, unoosa_only, celestrak_only]
+
+  # ---------------------------------------------------------------------
+  # 8. Reserved for Track B (ADR-004)
+  # ---------------------------------------------------------------------
+
+  - name: function_canonical
+    dtype: str
+    nullable: true
+    role: reserved
+    description: |
+      Classified satellite function (taxonomy TBD by Track B).
+      v0.5.0 writes null; populated by orbital-taxosat per ADR-004.
+    source:
+      kind: reserved
+      reserved_for: "Track B / orbital-taxosat (ADR-004)"
+
+  - name: function_canonical_confidence
+    dtype: float64
+    nullable: true
+    role: reserved
+    description: "Confidence of function_canonical. Reserved per ADR-004."
+    source:
+      kind: reserved
+      reserved_for: "Track B / orbital-taxosat (ADR-004)"
+    constraint:
+      type: range
+      min: 0.0
+      max: 1.0
+
+  # ---------------------------------------------------------------------
+  # 9. Audit
+  # ---------------------------------------------------------------------
+
+  - name: snapshot_date
+    dtype: date
+    nullable: false
+    role: audit
+    description: |
+      The snapshot date this row belongs to. Duplicated with the
+      hive partition path so each parquet file is self-contained.
+    source:
+      kind: computed
+      computed_by: pipelines.flows.canonical_flow
+    constraint:
+      type: date_range
+      min: "1957-10-04"
