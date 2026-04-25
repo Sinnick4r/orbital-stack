@@ -1,0 +1,223 @@
+# Name normalization gold set — v0.5.0.
+#
+# Behavioral contract for orbital.transform.normalize.normalize_name.
+# Frozen at v0.5.0 per ADR-009. Changing an existing expected output
+# is a breaking change and must be classified under ADR-008.
+#
+# Cases drawn from real Celestrak active GP feed observations
+# (2026-04-24, via notebooks/exploration/celestrak_discovery.ipynb)
+# plus classic UNOOSA-style historical conventions. Each case
+# exercises one or more pipeline stages.
+#
+# Adding new cases is always safe (additive). Removing a case is
+# safe only if the behavior it tests is covered by another case.
+
+schema_version: "1.0.0"
+
+cases:
+
+  # ------------------------------------------------------------------ #
+  # Identity and case                                                   #
+  # ------------------------------------------------------------------ #
+
+  - id: already_normalized
+    input: "starlink-30123"
+    expected: "starlink-30123"
+    rationale: "Idempotency. Already-normalized input survives unchanged."
+
+  - id: uppercase
+    input: "STARLINK-30123"
+    expected: "starlink-30123"
+    rationale: "Lowercase conversion preserves internal hyphen and digits."
+
+  - id: mixed_case
+    input: "StarLink 2"
+    expected: "starlink 2"
+    rationale: "Mixed case lowercases uniformly."
+
+  # ------------------------------------------------------------------ #
+  # Whitespace handling                                                 #
+  # ------------------------------------------------------------------ #
+
+  - id: leading_trailing_whitespace
+    input: "   iss   "
+    expected: "iss"
+    rationale: "Leading and trailing whitespace removed."
+
+  - id: internal_multiple_spaces
+    input: "cosmos    1234"
+    expected: "cosmos 1234"
+    rationale: "Runs of whitespace collapsed to single space."
+
+  - id: tab_character
+    input: "ops\t5712"
+    expected: "ops 5712"
+    rationale: "Tab counts as whitespace and is collapsed to a single space."
+
+  # ------------------------------------------------------------------ #
+  # Parenthesized aliases (canonical Celestrak pattern, 3.3% of feed)   #
+  # ------------------------------------------------------------------ #
+
+  - id: iss_zarya
+    input: "ISS (ZARYA)"
+    expected: "iss"
+    rationale: "Standard alias format. Real example from GP feed."
+
+  - id: oscar_ham_alias
+    input: "OSCAR 7 (AO-7)"
+    expected: "oscar 7"
+    rationale: "Amateur-radio aliases use parens. Real example from GP feed."
+
+  - id: cosmos_etalon_alias
+    input: "COSMOS 1989 (ETALON 1)"
+    expected: "cosmos 1989"
+    rationale: "Soviet naming with program alias. Real example."
+
+  - id: military_usa_alias
+    input: "USA 65 (DSP 15)"
+    expected: "usa 65"
+    rationale: "US military designator with program alias. Real example."
+
+  - id: navstar_usa_alias
+    input: "NAVSTAR 52 (USA 168)"
+    expected: "navstar 52"
+    rationale: "GPS satellite with military designator. Real example."
+
+  - id: chinese_ziyuan
+    input: "ZIYUAN 1-02C (ZY 1-02C)"
+    expected: "ziyuan 1-02c"
+    rationale: "Pinyin transliterated name with abbreviation alias. Real example."
+
+  - id: slash_in_parens
+    input: "OPS 5712 (P/L 160)"
+    expected: "ops 5712"
+    rationale: "Paren content removed entirely, even when it contains slashes."
+
+  # ------------------------------------------------------------------ #
+  # Bracketed type markers (SATCAT convention)                          #
+  # ------------------------------------------------------------------ #
+
+  - id: debris_marker
+    input: "COSMOS 1234 [DEB]"
+    expected: "cosmos 1234"
+    rationale: "Bracket strips SATCAT type markers (DEB = debris)."
+
+  - id: tank_marker
+    input: "BREEZE-M [TANK]"
+    expected: "breeze-m"
+    rationale: "Tank-type marker stripped. Internal hyphen preserved."
+
+  - id: bracket_and_paren
+    input: "COSMOS 1234 [DEB] (ALIAS)"
+    expected: "cosmos 1234"
+    rationale: "Both bracket and paren content stripped in one pass."
+
+  # ------------------------------------------------------------------ #
+  # Roman numerals                                                      #
+  # ------------------------------------------------------------------ #
+
+  - id: explorer_roman_one
+    input: "EXPLORER I"
+    expected: "explorer 1"
+    rationale: "Historical satellite naming. I -> 1."
+
+  - id: explorer_roman_seven
+    input: "EXPLORER VII"
+    expected: "explorer 7"
+    rationale: "VII matches before V would, because longer tokens have priority."
+
+  - id: apollo_roman_eleven
+    input: "APOLLO XI"
+    expected: "apollo 11"
+    rationale: "XI -> 11."
+
+  - id: mariner_roman_five
+    input: "MARINER V"
+    expected: "mariner 5"
+    rationale: "Standalone V at word boundary -> 5."
+
+  # ------------------------------------------------------------------ #
+  # Diacritics                                                          #
+  # ------------------------------------------------------------------ #
+
+  - id: accented_e
+    input: "Alouetté"
+    expected: "alouette"
+    rationale: "NFKD decomposes é to e + combining acute; combining mark stripped."
+
+  - id: german_umlaut
+    input: "Müller-Sat"
+    expected: "muller-sat"
+    rationale: "ü decomposes to u + combining diaeresis; diaeresis stripped."
+
+  # ------------------------------------------------------------------ #
+  # Constellation families (dominant in GP feed)                        #
+  # ------------------------------------------------------------------ #
+
+  - id: starlink_large_number
+    input: "STARLINK-30123"
+    expected: "starlink-30123"
+    rationale: "Constellation member. Hyphen and 5-digit number preserved."
+
+  - id: oneweb_leading_zero
+    input: "ONEWEB-0567"
+    expected: "oneweb-0567"
+    rationale: "Leading zero preserved (part of the identifier)."
+
+  - id: beidou_igso
+    input: "BEIDOU-2 IGSO-4"
+    expected: "beidou-2 igso-4"
+    rationale: "Multi-segment hyphenation preserved across spaces."
+
+  - id: flock_constellation
+    input: "FLOCK 4K-20"
+    expected: "flock 4k-20"
+    rationale: "Planet Labs naming: letter-number-hyphen-number. All preserved."
+
+  # ------------------------------------------------------------------ #
+  # Terminal punctuation                                                #
+  # ------------------------------------------------------------------ #
+
+  - id: trailing_period
+    input: "sat."
+    expected: "sat"
+    rationale: "Single trailing period stripped."
+
+  - id: trailing_multiple_periods
+    input: "sat..."
+    expected: "sat"
+    rationale: "Multiple trailing periods stripped (rstrip handles the set)."
+
+  - id: internal_period_preserved
+    input: "sat.one"
+    expected: "sat.one"
+    rationale: "Internal period is not terminal, so not stripped."
+
+  # ------------------------------------------------------------------ #
+  # Edge cases                                                          #
+  # ------------------------------------------------------------------ #
+
+  - id: empty_string
+    input: ""
+    expected: ""
+    rationale: "Empty input -> empty output (fast path)."
+
+  - id: only_whitespace
+    input: "    "
+    expected: ""
+    rationale: "Whitespace-only input normalizes to empty string."
+
+  - id: only_parens
+    input: "(REMOVED)"
+    expected: ""
+    rationale: "Paren-only input produces empty output after paren strip."
+
+  - id: cospar_shaped_name
+    input: "2021-091B"
+    expected: "2021-091b"
+    rationale: "Celestrak sometimes uses COSPAR as OBJECT_NAME (7 real cases observed 2026-04-24)."
+
+  - id: single_word
+    input: "SAT"
+    expected: "sat"
+    rationale: "Single word input normalizes via lowercase only."
