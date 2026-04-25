@@ -12,3 +12,8 @@ unoosa_registro_*.csv
 !data/**/*.dvc
 src/**/__pycache__/
 **/*.pyc
+
+__pycache__/
+*.pyc
+*.pyo
+
