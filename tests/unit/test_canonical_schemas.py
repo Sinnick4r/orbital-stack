@@ -26,7 +26,6 @@ from orbital.quality.canonical_schemas import (
     validate_canonical,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                     #
 # --------------------------------------------------------------------------- #
@@ -74,12 +73,12 @@ def _df_from_row(row: dict[str, Any]) -> pl.DataFrame:
     return pl.DataFrame([ordered], schema=CANONICAL_POLARS_SCHEMA)
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_row() -> dict[str, Any]:
     return _minimal_valid_row()
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_df(valid_row: dict[str, Any]) -> pl.DataFrame:
     return _df_from_row(valid_row)
 

@@ -26,7 +26,6 @@ from orbital.quality.celestrak_satcat_schemas import (
     CelestrakSatcatSchemaValidationError,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                     #
 # --------------------------------------------------------------------------- #
@@ -181,9 +180,8 @@ def test_http_error_propagates() -> None:
     with patch(
         "orbital.ingest.celestrak.satcat.fetch_celestrak",
         side_effect=CelestrakHTTPError("Internal server error", status_code=500),
-    ):
-        with pytest.raises(CelestrakHTTPError) as excinfo:
-            fetch_satcat_catalog()
+    ), pytest.raises(CelestrakHTTPError) as excinfo:
+        fetch_satcat_catalog()
     assert excinfo.value.status_code == 500
 
 
@@ -197,18 +195,16 @@ def test_schema_validation_error_propagates() -> None:
     with patch(
         "orbital.ingest.celestrak.satcat.fetch_celestrak",
         return_value=_make_response(body),
-    ):
-        with pytest.raises(CelestrakSatcatSchemaValidationError):
-            fetch_satcat_catalog()
+    ), pytest.raises(CelestrakSatcatSchemaValidationError):
+        fetch_satcat_catalog()
 
 
 def test_empty_response_body_rejected() -> None:
     with patch(
         "orbital.ingest.celestrak.satcat.fetch_celestrak",
         return_value=_make_response(b""),
-    ):
-        with pytest.raises(ValueError, match="empty"):
-            fetch_satcat_catalog()
+    ), pytest.raises(ValueError, match="empty"):
+        fetch_satcat_catalog()
 
 
 # --------------------------------------------------------------------------- #

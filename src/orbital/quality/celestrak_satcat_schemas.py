@@ -62,6 +62,12 @@ _COSPAR_PATTERN: Final[str] = r"^\d{4,5}-[A-Z0-9*\- ]+$"
 # Earliest plausible launch or decay date: Sputnik-1 launch.
 _EARLIEST_LAUNCH: Final[date] = date(1957, 10, 4)
 
+# Expected number of columns in Celestrak's SATCAT CSV response.
+# Empirically observed on 2026-04-25 (full ~68k-row catalog snapshot).
+# Used as a tripwire by the column-order check to flag silent drift in
+# CELESTRAK_SATCAT_COLUMN_ORDER.
+_EXPECTED_COLUMN_COUNT: Final[int] = 17
+
 # OBJECT_TYPE literal set. Per SATCAT 2023-05-07 spec; empirically
 # confirmed to be exhaustive on the 2026-04-25 snapshot.
 _VALID_OBJECT_TYPES: Final[tuple[str, ...]] = ("PAY", "R/B", "DEB", "UNK")
@@ -332,7 +338,7 @@ def _check_column_order(df: pl.DataFrame) -> None:
     )
     expected: list[str] = list(CELESTRAK_SATCAT_COLUMN_ORDER)
     actual: list[str] = df.columns
-    assert len(expected) == 17, (
+    assert len(expected) == _EXPECTED_COLUMN_COUNT, (
         f"CELESTRAK_SATCAT_COLUMN_ORDER has drifted to {len(expected)} entries"
     )
     assert len(CELESTRAK_SATCAT_POLARS_SCHEMA) == len(expected), (

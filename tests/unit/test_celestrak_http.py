@@ -17,15 +17,15 @@ real network calls.
 
 from __future__ import annotations
 
+import pytest
 import requests
 import responses
-import pytest
 
 from orbital.ingest.celestrak._http import (
     CELESTRAK_NOT_UPDATED_PREFIX,
+    USER_AGENT,
     CelestrakAlreadyCurrentError,
     CelestrakHTTPError,
-    USER_AGENT,
     fetch_celestrak,
 )
 

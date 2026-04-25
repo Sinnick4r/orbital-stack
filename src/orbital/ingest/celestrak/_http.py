@@ -43,10 +43,10 @@ from requests import Response
 
 __all__ = [
     "CELESTRAK_NOT_UPDATED_PREFIX",
+    "USER_AGENT",
     "CelestrakAlreadyCurrentError",
     "CelestrakHTTPError",
     "CelestrakResponse",
-    "USER_AGENT",
     "fetch_celestrak",
 ]
 
@@ -76,6 +76,12 @@ CELESTRAK_NOT_UPDATED_PREFIX: Final[str] = "GP data has not updated since"
 # headroom for transient network slowness without letting a hung
 # connection block CI for minutes.
 _DEFAULT_TIMEOUT_SECONDS: Final[float] = 30.0
+
+# HTTP status codes referenced in the dispatch logic below. Named to make
+# the intent obvious at the call site without forcing the reader to
+# remember which status corresponds to which path (PLR2004).
+_HTTP_OK: Final[int] = 200
+_HTTP_FORBIDDEN: Final[int] = 403
 
 
 # --------------------------------------------------------------------------- #
@@ -218,17 +224,17 @@ def fetch_celestrak(
             f"Celestrak request failed: {url} ({exc})"
         ) from exc
 
-    if response.status_code == 403:
+    if response.status_code == _HTTP_FORBIDDEN:
         _handle_403_response(response, url=url)
 
-    if response.status_code != 200:
+    if response.status_code != _HTTP_OK:
         raise CelestrakHTTPError(
             f"Celestrak returned HTTP {response.status_code} for {url}: "
             f"{_truncate_body_for_log(response.text)}",
             status_code=response.status_code,
         )
 
-    assert response.status_code == 200, "unreachable: 200 path"
+    assert response.status_code == _HTTP_OK, "unreachable: 200 path"
     assert response.content is not None, "200 response with no body"
     return CelestrakResponse(
         url=response.url,

@@ -54,6 +54,12 @@ _COSPAR_PATTERN: Final[str] = r"^\d{4,5}-[A-Z0-9*\- ]+$"
 # Earliest plausible launch or decay date: Sputnik-1 launch.
 _EARLIEST_LAUNCH: Final[date] = date(1957, 10, 4)
 
+# Expected number of columns in the canonical schema. Used by the
+# defensive assertion in `_check_column_order` to catch silent drift of
+# CANONICAL_COLUMN_ORDER. The number itself is part of the schema's
+# major version contract — a change here implies a major version bump.
+_EXPECTED_COLUMN_COUNT: Final[int] = 24
+
 # Published column order per ADR-009 §6. Order is part of the contract:
 # ADR-008 classifies reordering as a breaking change. This tuple is the
 # single source of truth for order within the Python codebase; the YAML
@@ -370,7 +376,9 @@ def _check_column_order(df: pl.DataFrame) -> None:
     assert isinstance(df, pl.DataFrame), f"expected pl.DataFrame, got {type(df).__name__}"
     expected: list[str] = list(CANONICAL_COLUMN_ORDER)
     actual: list[str] = df.columns
-    assert len(expected) == 24, f"CANONICAL_COLUMN_ORDER has drifted to {len(expected)} entries"
+    assert len(expected) == _EXPECTED_COLUMN_COUNT, (
+        f"CANONICAL_COLUMN_ORDER has drifted to {len(expected)} entries"
+    )
     assert len(CANONICAL_POLARS_SCHEMA) == len(expected), (
         f"CANONICAL_POLARS_SCHEMA drifted from CANONICAL_COLUMN_ORDER: "
         f"{len(CANONICAL_POLARS_SCHEMA)} vs {len(expected)}"

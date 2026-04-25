@@ -23,6 +23,11 @@ from typing import Any
 import pytest
 import yaml
 
+from orbital.quality.canonical_schemas import (
+    CANONICAL_COLUMN_ORDER,
+    CANONICAL_SCHEMA_MAJOR_VERSION,
+    CANONICAL_SCHEMA_VERSION,
+)
 from orbital.utils.paths import PROJECT_ROOT
 
 SCHEMA_YAML: Path = PROJECT_ROOT / "configs" / "canonical_schema.v1.yaml"
@@ -34,7 +39,9 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     assert path.exists(), f"required file missing: {path}"
     with path.open(encoding="utf-8") as handle:
         data = yaml.safe_load(handle)
-    assert isinstance(data, dict), f"expected YAML mapping at root of {path}, got {type(data).__name__}"
+    assert isinstance(data, dict), (
+        f"expected YAML mapping at root of {path}, got {type(data).__name__}"
+    )
     return data
 
 
@@ -145,8 +152,6 @@ def test_manifest_relative_column_order_preserved(
 
 def test_python_column_order_matches_yaml(schema: dict[str, Any]) -> None:
     """CANONICAL_COLUMN_ORDER in Python must match YAML column order exactly."""
-    from orbital.quality.canonical_schemas import CANONICAL_COLUMN_ORDER
-
     yaml_names = tuple(col["name"] for col in schema["columns"])
     assert tuple(CANONICAL_COLUMN_ORDER) == yaml_names, (
         "Python CANONICAL_COLUMN_ORDER drifted from YAML column order.\n"
@@ -158,16 +163,11 @@ def test_python_column_order_matches_yaml(schema: dict[str, Any]) -> None:
 
 def test_python_schema_version_matches_yaml(schema: dict[str, Any]) -> None:
     """CANONICAL_SCHEMA_VERSION in Python must match YAML schema_version."""
-    from orbital.quality.canonical_schemas import (
-        CANONICAL_SCHEMA_MAJOR_VERSION,
-        CANONICAL_SCHEMA_VERSION,
-    )
-
-    assert CANONICAL_SCHEMA_VERSION == schema["schema_version"], (
+    assert schema["schema_version"] == CANONICAL_SCHEMA_VERSION, (
         f"Python CANONICAL_SCHEMA_VERSION={CANONICAL_SCHEMA_VERSION!r} "
         f"!= YAML schema_version={schema['schema_version']!r}"
     )
-    assert CANONICAL_SCHEMA_MAJOR_VERSION == schema["schema_major_version"], (
+    assert schema["schema_major_version"] == CANONICAL_SCHEMA_MAJOR_VERSION, (
         f"Python CANONICAL_SCHEMA_MAJOR_VERSION={CANONICAL_SCHEMA_MAJOR_VERSION} "
         f"!= YAML schema_major_version={schema['schema_major_version']}"
     )

@@ -21,7 +21,6 @@ from orbital.ingest.celestrak._http import (
 from orbital.ingest.celestrak.gp import GP_ENDPOINT_URL, fetch_gp_catalog
 from orbital.quality.celestrak_gp_schemas import CelestrakGpSchemaValidationError
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                     #
 # --------------------------------------------------------------------------- #
@@ -138,9 +137,8 @@ def test_http_error_propagates() -> None:
     with patch(
         "orbital.ingest.celestrak.gp.fetch_celestrak",
         side_effect=CelestrakHTTPError("Internal server error", status_code=500),
-    ):
-        with pytest.raises(CelestrakHTTPError) as excinfo:
-            fetch_gp_catalog()
+    ), pytest.raises(CelestrakHTTPError) as excinfo:
+        fetch_gp_catalog()
     assert excinfo.value.status_code == 500
 
 
@@ -155,9 +153,8 @@ def test_schema_validation_error_propagates() -> None:
     with patch(
         "orbital.ingest.celestrak.gp.fetch_celestrak",
         return_value=_make_response(body),
-    ):
-        with pytest.raises(CelestrakGpSchemaValidationError):
-            fetch_gp_catalog()
+    ), pytest.raises(CelestrakGpSchemaValidationError):
+        fetch_gp_catalog()
 
 
 def test_empty_response_body_rejected() -> None:
@@ -165,9 +162,8 @@ def test_empty_response_body_rejected() -> None:
     with patch(
         "orbital.ingest.celestrak.gp.fetch_celestrak",
         return_value=_make_response(b""),
-    ):
-        with pytest.raises(ValueError, match="empty"):
-            fetch_gp_catalog()
+    ), pytest.raises(ValueError, match="empty"):
+        fetch_gp_catalog()
 
 
 # --------------------------------------------------------------------------- #

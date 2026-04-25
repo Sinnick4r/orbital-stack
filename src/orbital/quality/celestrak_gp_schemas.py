@@ -56,6 +56,11 @@ _COSPAR_PATTERN: Final[str] = r"^\d{4,5}-[A-Z0-9*\- ]+$"
 # Celestrak's ISO 8601 epoch convention.
 _EARLIEST_EPOCH: Final[str] = "1957-10-04T00:00:00"
 
+# Expected number of columns in Celestrak's GP CSV response. Empirically
+# observed on 2026-04-24. Used as a tripwire by the column-order check
+# to flag silent drift in CELESTRAK_GP_COLUMN_ORDER.
+_EXPECTED_COLUMN_COUNT: Final[int] = 17
+
 # Column order observed in the Celestrak GP CSV response on 2026-04-24.
 # Order is part of what we validate because a silent reordering
 # upstream would be a meaningful upstream change worth flagging.
@@ -315,7 +320,7 @@ def _check_column_order(df: pl.DataFrame) -> None:
     )
     expected: list[str] = list(CELESTRAK_GP_COLUMN_ORDER)
     actual: list[str] = df.columns
-    assert len(expected) == 17, (
+    assert len(expected) == _EXPECTED_COLUMN_COUNT, (
         f"CELESTRAK_GP_COLUMN_ORDER has drifted to {len(expected)} entries"
     )
     assert len(CELESTRAK_GP_POLARS_SCHEMA) == len(expected), (

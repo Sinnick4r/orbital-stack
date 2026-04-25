@@ -19,7 +19,6 @@ from orbital.quality.celestrak_gp_schemas import (
     validate_celestrak_gp_raw,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                     #
 # --------------------------------------------------------------------------- #
@@ -54,12 +53,12 @@ def _df_from_row(row: dict[str, Any]) -> pl.DataFrame:
     return pl.DataFrame([ordered], schema=CELESTRAK_GP_POLARS_SCHEMA)
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_row() -> dict[str, Any]:
     return _minimal_valid_row()
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_df(valid_row: dict[str, Any]) -> pl.DataFrame:
     return _df_from_row(valid_row)
 

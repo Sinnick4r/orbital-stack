@@ -38,8 +38,8 @@ from orbital.ingest.celestrak.satcat import (
 
 __all__ = [
     "GP_ENDPOINT_URL",
-    "GpFetchResult",
     "SATCAT_ENDPOINT_URL",
+    "GpFetchResult",
     "SatcatFetchResult",
     "fetch_gp_catalog",
     "fetch_satcat_catalog",
